@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AppNav from '../components/layout/AppNav';
@@ -9,72 +9,76 @@ import ReceiptRow from '../components/ui/ReceiptRow';
 
 export default function DepositsCreatePage() {
   const navigate = useNavigate();
-  const { addDeposit } = useAuth();
+  const { addDeposit, wasteTypes, dropPoints, apiConnected } = useAuth();
 
   const [category, setCategory] = useState('anorganik');
-  const [wasteType, setWasteType] = useState('Plastik PET (Botol Bening Bersih)');
+  const [selectedWasteType, setSelectedWasteType] = useState(null); // { id, name, points_per_kg }
+  const [selectedDropPoint, setSelectedDropPoint] = useState(null); // { id, name }
   const [weight, setWeight] = useState(3.5);
-  const [location, setLocation] = useState('Drop Point RW 04 Kebayoran');
   const [notes, setNotes] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedDeposit, setSubmittedDeposit] = useState(null);
 
-  const categoryRates = {
-    organik: {
-      rate: 50,
-      unit: 'kg',
-      items: [
-        'Kompos & Sisa Sayur Dapur Organik',
-        'Kulit Buah & Ampas Kopi/Teh',
-        'Dedaunan Kering & Ranting Halus'
-      ]
-    },
-    anorganik: {
-      rate: 300,
-      unit: 'kg',
-      items: [
-        'Plastik PET (Botol Bening Bersih)',
-        'Plastik HDPE (Botol Sabun / Shampo)',
-        'Kardus & Kertas Dupleks',
-        'Kertas HVS & Arsip Kantor',
-        'Kaleng Alumunium & Seng'
-      ]
-    },
-    b3: {
-      rate: 800,
-      unit: 'unit/kg',
-      items: [
-        'Baterai Kering Bekas (Alkaline/Lithium)',
-        'Lampu Neon & CFL Bekas',
-        'E-Waste (Kabel, Charger Rusak, PCB)',
-        'Kemasan Bahan Kimia / Pestisida'
-      ]
+  // Category classification for API waste types
+  const classifyCategory = (name) => {
+    const lower = (name || '').toLowerCase();
+    if (lower.includes('organik') || lower.includes('kompos') || lower.includes('jelantah')) return 'organik';
+    if (lower.includes('e-waste') || lower.includes('elektronik') || lower.includes('baterai') || lower.includes('b3') || lower.includes('minyak')) return 'b3';
+    return 'anorganik';
+  };
+
+  // Static fallback category rates (used when API is offline)
+  const fallbackRates = {
+    organik: { rate: 50, items: ['Kompos & Sisa Sayur Dapur Organik', 'Kulit Buah & Ampas Kopi/Teh', 'Dedaunan Kering'] },
+    anorganik: { rate: 300, items: ['Plastik PET (Botol Bening Bersih)', 'Kardus & Kertas Dupleks', 'Kaleng Alumunium & Seng'] },
+    b3: { rate: 800, items: ['Baterai Kering Bekas', 'E-Waste (Kabel, Charger Rusak, PCB)'] }
+  };
+
+  // Filtered waste types from API based on selected category
+  const filteredWasteTypes = useMemo(() => {
+    if (wasteTypes && wasteTypes.length > 0) {
+      return wasteTypes.filter(wt => classifyCategory(wt.name) === category && wt.is_active !== false);
     }
-  };
+    return [];
+  }, [wasteTypes, category]);
 
-  // When category changes, update wasteType to first item
-  const handleCategoryChange = (newCat) => {
-    setCategory(newCat);
-    setWasteType(categoryRates[newCat].items[0]);
-  };
+  const currentPointsPerKg = selectedWasteType
+    ? selectedWasteType.points_per_kg
+    : (filteredWasteTypes[0]?.points_per_kg || fallbackRates[category]?.rate || 300);
 
-  const currentRate = categoryRates[category].rate;
-  const estimatedPoints = Math.floor(weight * currentRate);
+  const estimatedPoints = Math.floor(weight * currentPointsPerKg);
   const draftId = `DRAFT-DEP-${Math.floor(100 + Math.random() * 900)}`;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleCategoryChange = (newCat) => {
+    setCategory(newCat);
+    setSelectedWasteType(null); // reset when category changes
+  };
 
-    const created = addDeposit({
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const activeWasteType = selectedWasteType || filteredWasteTypes[0];
+    const wasteTypeId = activeWasteType?.id || null;
+    const wasteTypeName = activeWasteType?.name || fallbackRates[category]?.items[0] || 'Sampah Terpilah';
+    const dropPointId = selectedDropPoint?.id || (dropPoints[0]?.id || null);
+    const dropPointName = selectedDropPoint?.name || (dropPoints[0]?.name || 'Drop Point EcoPoints Pusat');
+
+    const result = await addDeposit({
       category,
-      type: wasteType,
+      type: wasteTypeName,
+      waste_type_id: wasteTypeId,
+      drop_point_id: dropPointId,
+      location: dropPointName,
       weight,
       points: estimatedPoints,
-      location,
       notes
     });
 
-    setSubmittedDeposit(created);
+    const item = result?.data || result;
+    setSubmittedDeposit(item);
+    setIsSubmitting(false);
     setIsSubmitted(true);
   };
 
@@ -217,11 +221,16 @@ export default function DepositsCreatePage() {
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                       {[
-                        { id: 'organik', label: 'Organik', color: 'organik', rate: '50' },
-                        { id: 'anorganik', label: 'Anorganik', color: 'anorganik', rate: '300' },
-                        { id: 'b3', label: 'B3 / E-Waste', color: 'b3', rate: '800' }
+                        { id: 'organik', label: 'Organik', color: 'organik' },
+                        { id: 'anorganik', label: 'Anorganik', color: 'anorganik' },
+                        { id: 'b3', label: 'B3 / E-Waste', color: 'b3' }
                       ].map((cat) => {
                         const isSelected = category === cat.id;
+                        // Get rate to display from API or fallback
+                        const catWasteTypes = wasteTypes?.filter(wt => classifyCategory(wt.name) === cat.id) || [];
+                        const displayRate = catWasteTypes.length > 0
+                          ? Math.round(catWasteTypes.reduce((sum, wt) => sum + wt.points_per_kg, 0) / catWasteTypes.length)
+                          : fallbackRates[cat.id]?.rate || 300;
                         return (
                           <button
                             key={cat.id}
@@ -250,7 +259,7 @@ export default function DepositsCreatePage() {
                                 color: isSelected ? 'var(--color-poin-light)' : 'var(--color-ink-muted)'
                               }}
                             >
-                              {cat.rate} pts/kg
+                              ~{displayRate} pts/kg
                             </span>
                           </button>
                         );
@@ -258,22 +267,33 @@ export default function DepositsCreatePage() {
                     </div>
                   </div>
 
-                  {/* Sub-item dropdown */}
+                  {/* Sub-item dropdown - dynamic from API or fallback */}
                   <div className="form-group">
                     <label className="form-label" htmlFor="wasteType">
                       2. Jenis Spesifik Sampah
+                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>● Dari Database</span>}
                     </label>
                     <select
                       id="wasteType"
                       className="form-select"
-                      value={wasteType}
-                      onChange={(e) => setWasteType(e.target.value)}
+                      value={selectedWasteType?.id || ''}
+                      onChange={(e) => {
+                        const found = filteredWasteTypes.find(wt => String(wt.id) === String(e.target.value));
+                        setSelectedWasteType(found || null);
+                      }}
                     >
-                      {categoryRates[category].items.map((item, idx) => (
-                        <option key={idx} value={item}>
-                          {item}
-                        </option>
-                      ))}
+                      {filteredWasteTypes.length > 0
+                        ? filteredWasteTypes.map((wt) => (
+                            <option key={wt.id} value={wt.id}>
+                              {wt.name} ({wt.points_per_kg} pts/kg)
+                            </option>
+                          ))
+                        : fallbackRates[category]?.items.map((item, idx) => (
+                            <option key={idx} value={''}>
+                              {item}
+                            </option>
+                          ))
+                      }
                     </select>
                   </div>
 
@@ -324,21 +344,34 @@ export default function DepositsCreatePage() {
                     <p className="form-hint">* Dapat disesuaikan kembali oleh timbangan fisik petugas di lokasi.</p>
                   </div>
 
-                  {/* Location Drop Point */}
+                  {/* Location Drop Point - dynamic from API or fallback */}
                   <div className="form-group">
                     <label className="form-label" htmlFor="location">
                       4. Lokasi Drop Point Tujuan
+                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>● Dari Database</span>}
                     </label>
                     <select
                       id="location"
                       className="form-select"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
+                      value={selectedDropPoint?.id || ''}
+                      onChange={(e) => {
+                        const found = dropPoints.find(dp => String(dp.id) === String(e.target.value));
+                        setSelectedDropPoint(found || null);
+                      }}
                     >
-                      <option value="Drop Point RW 04 Kebayoran">Drop Point RW 04 Kebayoran (Balai Warga)</option>
-                      <option value="Drop Point Utama Balai Warga">Drop Point Utama Balai Warga Kecamatan</option>
-                      <option value="Unit Komposting Mandiri">Unit Komposting Mandiri TPS 3R</option>
-                      <option value="Drop Point Stasiun MRT">Drop Point Stasiun MRT Bundaran HI</option>
+                      {dropPoints.length > 0
+                        ? dropPoints.map((dp) => (
+                            <option key={dp.id} value={dp.id}>
+                              {dp.name} – {dp.address?.substring(0, 40)}{dp.address?.length > 40 ? '...' : ''}
+                            </option>
+                          ))
+                        : (
+                          <>
+                            <option value="">Drop Point EcoPoints Pusat – Jl. Sudirman, Jakarta</option>
+                            <option value="">Drop Point EcoPoints Jakarta Selatan – Cilandak</option>
+                          </>
+                        )
+                      }
                     </select>
                   </div>
 
@@ -361,9 +394,10 @@ export default function DepositsCreatePage() {
                     type="submit"
                     variant="primary"
                     size="lg"
-                    style={{ width: '100%', marginTop: '0.5rem' }}
+                    disabled={isSubmitting}
+                    style={{ width: '100%', marginTop: '0.5rem', opacity: isSubmitting ? 0.7 : 1 }}
                   >
-                    Konfirmasi & Kirim Setoran →
+                    {isSubmitting ? 'Mengirim...' : 'Konfirmasi & Kirim Setoran →'}
                   </Button>
                 </form>
               </div>

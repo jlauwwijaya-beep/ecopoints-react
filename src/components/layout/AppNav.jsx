@@ -5,7 +5,7 @@ import NavLink from '../ui/NavLink';
 import Button from '../ui/Button';
 
 export default function AppNav() {
-  const { user, logout } = useAuth();
+  const { user, logout, apiConnected } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -96,6 +96,36 @@ export default function AppNav() {
 
         {/* Right: User points & profile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+          {/* API Status Indicator */}
+          <div
+            title={apiConnected ? 'API Backend Terhubung' : 'API Backend Offline'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              padding: '0.25rem 0.625rem',
+              background: apiConnected ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+              border: `1px solid ${apiConnected ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`,
+              borderRadius: '4px',
+              fontSize: '0.625rem',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: apiConnected ? '#16a34a' : '#dc2626'
+            }}
+            className="api-status-badge"
+          >
+            <span style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: apiConnected ? '#22c55e' : '#ef4444',
+              display: 'inline-block',
+              boxShadow: apiConnected ? '0 0 0 2px rgba(34,197,94,0.3)' : '0 0 0 2px rgba(239,68,68,0.3)'
+            }} />
+            {apiConnected ? 'API Online' : 'Offline'}
+          </div>
+
           {/* User Points Badge */}
           <div
             className="font-mono tabular-nums"
@@ -111,7 +141,7 @@ export default function AppNav() {
           >
             <span style={{ color: 'var(--color-poin)', fontWeight: 800 }}>★</span>
             <span style={{ fontWeight: 700, color: 'var(--color-ink)' }}>
-              {user ? user.points.toLocaleString('id-ID') : 0}
+              {user ? (user.points || 0).toLocaleString('id-ID') : 0}
             </span>
             <span className="text-faint" style={{ fontSize: '0.6875rem' }}>PTS</span>
           </div>
@@ -197,6 +227,11 @@ export default function AppNav() {
             display: flex !important;
           }
           .mobile-toggle-btn {
+            display: none !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .api-status-badge {
             display: none !important;
           }
         }

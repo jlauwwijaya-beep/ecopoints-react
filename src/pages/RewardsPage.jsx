@@ -8,15 +8,18 @@ export default function RewardsPage() {
   const { user, rewards, redeemReward } = useAuth();
   const [selectedReward, setSelectedReward] = useState(null);
   const [redeemStatus, setRedeemStatus] = useState(null); // { success: bool, message: string }
+  const [loadingRedeem, setLoadingRedeem] = useState(false);
 
   const handleOpenRedeem = (reward) => {
     setSelectedReward(reward);
     setRedeemStatus(null);
   };
 
-  const handleConfirmRedeem = () => {
-    if (!selectedReward) return;
-    const res = redeemReward(selectedReward.id);
+  const handleConfirmRedeem = async () => {
+    if (!selectedReward || loadingRedeem) return;
+    setLoadingRedeem(true);
+    const res = await redeemReward(selectedReward.id);
+    setLoadingRedeem(false);
     setRedeemStatus(res);
   };
 
@@ -217,10 +220,11 @@ export default function RewardsPage() {
                       <Button
                         variant="primary"
                         size="md"
+                        disabled={loadingRedeem}
                         onClick={handleConfirmRedeem}
                         style={{ flex: 1 }}
                       >
-                        Ya, Tukarkan →
+                        {loadingRedeem ? 'Memproses...' : 'Ya, Tukarkan →'}
                       </Button>
                     </div>
                   </>

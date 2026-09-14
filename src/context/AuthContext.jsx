@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authApi, depositApi, rewardApi } from '../api/apiClient';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authApi, depositApi, rewardApi, masterApi, pointApi, healthApi, setAuthToken } from '../api/apiClient';
 
 const AuthContext = createContext(null);
 
@@ -23,47 +23,17 @@ const INITIAL_DEPOSITS = [
     weight: 4.5,
     points: 1350,
     status: 'verified',
-    location: 'Drop Point RW 04 Kebayoran'
+    location: 'Drop Point EcoPoints Pusat'
   },
   {
     id: 'DEP-2025-002',
     date: '14 Mei 2025, 14:15',
     category: 'anorganik',
-    type: 'Kardus & Kertas Dupleks',
+    type: 'Kardus Box',
     weight: 8.0,
     points: 1200,
     status: 'verified',
-    location: 'Drop Point Utama Balai Warga'
-  },
-  {
-    id: 'DEP-2025-003',
-    date: '18 Mei 2025, 10:00',
-    category: 'organik',
-    type: 'Kompos & Sisa Dapur Organik',
-    weight: 6.2,
-    points: 310,
-    status: 'verified',
-    location: 'Unit Komposting Mandiri'
-  },
-  {
-    id: 'DEP-2025-004',
-    date: '22 Mei 2025, 16:40',
-    category: 'b3',
-    type: 'Baterai Bekas & Aki Kering',
-    weight: 1.5,
-    points: 1500,
-    status: 'pending',
-    location: 'Drop Point RW 04 Kebayoran'
-  },
-  {
-    id: 'DEP-2025-005',
-    date: '24 Mei 2025, 11:20',
-    category: 'anorganik',
-    type: 'Kaleng Alumunium Minuman',
-    weight: 2.0,
-    points: 600,
-    status: 'pending',
-    location: 'Drop Point Stasiun MRT'
+    location: 'Drop Point EcoPoints Jakarta Selatan'
   }
 ];
 
@@ -83,95 +53,77 @@ const INITIAL_TRANSACTIONS = [
     type: 'credit',
     amount: 1200,
     balance: 2550
-  },
-  {
-    id: 'TXN-903',
-    date: '15 Mei 2025',
-    description: 'Penukaran Voucher Belanja Minimarket Rp 25.000',
-    type: 'debit',
-    amount: 1000,
-    balance: 1550
-  },
-  {
-    id: 'TXN-904',
-    date: '18 Mei 2025',
-    description: 'Setoran Kompos & Organik 6.2kg [DEP-2025-003]',
-    type: 'credit',
-    amount: 310,
-    balance: 1860
-  },
-  {
-    id: 'TXN-905',
-    date: '20 Mei 2025',
-    description: 'Tukar Pulsa / Token Listrik PLN Rp 20.000',
-    type: 'debit',
-    amount: 850,
-    balance: 1010
-  },
-  {
-    id: 'TXN-906',
-    date: '21 Mei 2025',
-    description: 'Bonus Referral Nasabah Baru #EP882',
-    type: 'credit',
-    amount: 340,
-    balance: 1350
   }
 ];
 
 const INITIAL_REWARDS = [
   {
-    id: 'REW-01',
-    name: 'Voucher Belanja Sembako Rp 25.000',
-    cost: 1000,
+    id: 3,
+    name: 'Voucher Belanja Rp 50.000',
+    cost: 500,
     category: 'Voucher',
-    stock: 15,
-    description: 'Dapat digunakan di seluruh jaringan minimarket mitra & warung binaan RW.'
-  },
-  {
-    id: 'REW-02',
-    name: 'Token Listrik PLN Rp 20.000',
-    cost: 850,
-    category: 'Utilitas',
-    stock: 40,
-    description: 'Kode token 20 digit dikirim otomatis ke nomor ponsel terdaftar.'
-  },
-  {
-    id: 'REW-03',
-    name: 'Bibit Tanaman Sayur & Kompos 5kg',
-    cost: 400,
-    category: 'Eko-Produk',
-    stock: 25,
-    description: 'Pupuk kompos murni hasil olahan warga + 2 paket benih cabai rawit & kangkung.'
-  },
-  {
-    id: 'REW-04',
-    name: 'Tumbler Stainless Steel EcoPoints 600ml',
-    cost: 1200,
-    category: 'Merchandise',
-    stock: 8,
-    description: 'Edisi terbatas bergravir laser EcoPoints, insulasi dingin & panas 12 jam.'
-  },
-  {
-    id: 'REW-05',
-    name: 'Voucher BBM MyPertamina Rp 15.000',
-    cost: 650,
-    category: 'Transportasi',
-    stock: 18,
-    description: 'Kode voucher digital untuk SPBU di area Jabodetabek.'
-  },
-  {
-    id: 'REW-06',
-    name: 'Saldo E-Wallet (GoPay/OVO) Rp 50.000',
-    cost: 2100,
-    category: 'Uang Digital',
-    stock: 12,
-    description: 'Transfer saldo instan ke nomor akun e-wallet terdaftar.'
+    stock: 20,
+    description: 'Voucher belanja minimarket rekanan.'
   }
 ];
+
+function formatApiDeposit(d) {
+  const createdDate = d.created_at ? new Date(d.created_at) : new Date();
+  const dateStr = createdDate.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const wasteName = d.waste_type ? d.waste_type.name : 'Sampah Terpilah';
+  let cat = 'anorganik';
+  const lower = wasteName.toLowerCase();
+  if (lower.includes('organik') || lower.includes('kompos')) {
+    cat = 'organik';
+  } else if (lower.includes('e-waste') || lower.includes('elektronik') || lower.includes('baterai') || lower.includes('b3')) {
+    cat = 'b3';
+  }
+
+  return {
+    id: `DEP-${String(d.id).padStart(4, '0')}`,
+    rawId: d.id,
+    date: dateStr,
+    category: cat,
+    type: wasteName,
+    weight: d.weight_kg,
+    points: d.points_earned || Math.round(d.weight_kg * (d.waste_type?.points_per_kg || 500)),
+    status: d.status || 'verified',
+    location: d.drop_point ? d.drop_point.name : 'Drop Point EcoPoints Pusat'
+  };
+}
+
+function formatApiTransaction(t, currentBalance) {
+  const dateStr = t.created_at
+    ? new Date(t.created_at).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+    : 'Hari ini';
+
+  return {
+    id: `TXN-${String(t.id).padStart(4, '0')}`,
+    rawId: t.id,
+    date: dateStr,
+    description: t.description || (t.type === 'credit' ? 'Setoran Sampah' : 'Penukaran Reward'),
+    type: t.type,
+    amount: t.amount,
+    balance: currentBalance || 0
+  };
+}
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('ep_token') || null);
   const [apiConnected, setApiConnected] = useState(false);
+  const [wasteTypes, setWasteTypes] = useState([]);
+  const [dropPoints, setDropPoints] = useState([]);
 
   const [user, setUser] = useState(() => {
     try {
@@ -209,7 +161,80 @@ export function AuthProvider({ children }) {
     }
   });
 
-  // Listen for unauthorized 401 events
+  // Check API health and load master data
+  const loadMasterData = useCallback(async () => {
+    const health = await healthApi.check();
+    if (health.success) {
+      setApiConnected(true);
+    } else {
+      setApiConnected(false);
+    }
+
+    // Load waste types
+    const wtRes = await masterApi.getWasteTypes();
+    if (wtRes.success && Array.isArray(wtRes.data)) {
+      setWasteTypes(wtRes.data);
+    }
+
+    // Load drop points
+    const dpRes = await masterApi.getDropPoints();
+    if (dpRes.success && Array.isArray(dpRes.data)) {
+      setDropPoints(dpRes.data);
+    }
+
+    // Load rewards
+    const rewRes = await rewardApi.getAll();
+    if (rewRes.success && Array.isArray(rewRes.data) && rewRes.data.length > 0) {
+      const mapped = rewRes.data.map(r => ({
+        id: r.id,
+        name: r.name,
+        cost: r.point_cost,
+        stock: r.stock,
+        category: 'Voucher',
+        description: r.description || 'Reward penukaran EcoPoints resmi.',
+        image: r.image
+      }));
+      setRewards(mapped);
+    }
+  }, []);
+
+  // Load user data & deposits from API when authenticated
+  const loadUserData = useCallback(async (authToken) => {
+    if (!authToken) return;
+
+    // 1. Get Me
+    const meRes = await authApi.getMe();
+    if (meRes.success && meRes.data) {
+      setApiConnected(true);
+      const points = meRes.data.points_balance ?? meRes.data.points ?? 0;
+      setUser(prev => ({
+        ...prev,
+        id: meRes.data.id,
+        name: meRes.data.name,
+        email: meRes.data.email,
+        role: meRes.data.role,
+        points: points,
+        memberId: `EP-ID-${String(meRes.data.id).padStart(4, '0')}`
+      }));
+    }
+
+    // 2. Get user deposits
+    const depRes = await depositApi.getAll();
+    if (depRes.success && Array.isArray(depRes.data) && depRes.data.length > 0) {
+      const formatted = depRes.data.map(formatApiDeposit);
+      setDeposits(formatted);
+    }
+
+    // 3. Get point transactions
+    const txnRes = await pointApi.getTransactions();
+    if (txnRes.success && Array.isArray(txnRes.data) && txnRes.data.length > 0) {
+      const userPoints = meRes.success && meRes.data ? (meRes.data.points_balance ?? meRes.data.points ?? 0) : 0;
+      const formattedTxns = txnRes.data.map(t => formatApiTransaction(t, userPoints));
+      setTransactions(formattedTxns);
+    }
+  }, []);
+
+  // Handle 401 unauthorized
   useEffect(() => {
     const handleUnauthorized = () => {
       setToken(null);
@@ -221,25 +246,15 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('ep_unauthorized', handleUnauthorized);
   }, []);
 
-  // Try checking API connection and user profile on mount
+  // Initial load on mount
   useEffect(() => {
-    async function checkApi() {
-      if (token) {
-        const res = await authApi.getMe();
-        if (res.success && res.data) {
-          setApiConnected(true);
-          setUser(prev => ({
-            ...prev,
-            ...res.data,
-            points: res.data.points_balance ?? res.data.points ?? prev?.points ?? 0
-          }));
-        }
-      }
+    loadMasterData();
+    if (token) {
+      loadUserData(token);
     }
-    checkApi();
-  }, [token]);
+  }, [token, loadMasterData, loadUserData]);
 
-  // Sync state to local storage
+  // Sync to local storage
   useEffect(() => {
     if (user) {
       localStorage.setItem('ep_user', JSON.stringify(user));
@@ -269,53 +284,80 @@ export function AuthProvider({ children }) {
   }, [rewards]);
 
   const login = async (email, password) => {
-    // 1. Coba request ke REST API Backend Golang
     const res = await authApi.login(email, password);
 
     if (res.success && res.data) {
       const authToken = res.data.token || res.data.access_token;
       const apiUser = res.data.user || res.data;
-      const points = apiUser.points_balance ?? apiUser.points ?? 1350;
+      const points = apiUser.points_balance ?? apiUser.points ?? 0;
 
       const userData = {
-        id: apiUser.id || 'usr-api',
+        id: apiUser.id,
         name: apiUser.name || email.split('@')[0],
         email: apiUser.email || email,
         role: apiUser.role || 'user',
         points: points,
-        memberId: `EP-ID-${apiUser.id || '8821'}`
+        memberId: `EP-ID-${String(apiUser.id).padStart(4, '0')}`,
+        phone: '0812-8899-7711',
+        joinedDate: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
       };
+
+      // Set token and user synchronously so any subsequent API call or route check has them immediately
+      setAuthToken(authToken);
+      localStorage.setItem('ep_token', authToken);
+      localStorage.setItem('ep_user', JSON.stringify(userData));
 
       setToken(authToken);
       setUser(userData);
       setApiConnected(true);
+
+      // Load remote deposits and master data for this session asynchronously
+      loadUserData(authToken);
+      loadMasterData();
+
       return { success: true, user: userData, fromApi: true };
     }
 
-    // 2. Fallback jika API offline / belum jalan
+    // Jika server backend online tapi kredensial salah, berikan pesan error
+    if (!res.isOffline) {
+      return {
+        success: false,
+        message: res.error || 'Email atau kata sandi salah. Silakan coba lagi.',
+        fromApi: true
+      };
+    }
+
+    // Fallback HANYA jika server backend benar-benar offline (unreachable)
     const fallbackUser = {
       ...DEFAULT_USER,
       email: email || DEFAULT_USER.email,
       name: email === DEFAULT_USER.email ? DEFAULT_USER.name : (email.split('@')[0] || 'Nasabah Eco')
     };
     setUser(fallbackUser);
+    localStorage.setItem('ep_user', JSON.stringify(fallbackUser));
     return {
       success: true,
       user: fallbackUser,
       fromApi: false,
-      notice: res.isOffline ? 'Mode Offline: Backend belum aktif, menggunakan data simulasi.' : null
+      notice: 'Mode Offline: Backend tidak dapat dijangkau, menggunakan data simulasi lokal.'
     };
   };
 
   const register = async (name, email, password) => {
-    // 1. Coba request ke REST API
     const res = await authApi.register(name, email, password);
-
     if (res.success && res.data) {
       return login(email, password);
     }
 
-    // 2. Fallback jika offline
+    // Jika API online dan gagal (contoh email duplikat atau validasi gagal)
+    if (!res.isOffline) {
+      return {
+        success: false,
+        message: res.error || 'Gagal mendaftar. Pastikan email belum terdaftar dan sandi minimal 6 karakter.'
+      };
+    }
+
+    // Fallback jika API offline
     const newUser = {
       id: 'usr-' + Date.now(),
       name: name || 'Nasabah Baru',
@@ -327,55 +369,87 @@ export function AuthProvider({ children }) {
       joinedDate: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
     };
     setUser(newUser);
+    localStorage.setItem('ep_user', JSON.stringify(newUser));
     return { success: true, user: newUser, fromApi: false };
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
+    setAuthToken(null);
     localStorage.removeItem('ep_token');
     localStorage.removeItem('ep_user');
   };
 
   const addDeposit = async (depositData) => {
-    const newId = `DEP-${new Date().getFullYear()}-${String(deposits.length + 1).padStart(3, '0')}`;
-    const newDate = new Date().toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    let apiSuccess = false;
+    let savedItem = null;
 
-    const newDepositItem = {
-      id: newId,
-      date: newDate,
-      category: depositData.category,
-      type: depositData.type,
-      weight: parseFloat(depositData.weight),
-      points: Math.floor(depositData.points),
-      status: 'pending',
-      location: depositData.location || 'Drop Point Utama'
-    };
-
-    // Kirim ke API jika terhubung
-    try {
-      await depositApi.create({
-        waste_type_id: depositData.waste_type_id || 1,
+    // Send to Go API if token available
+    if (token) {
+      const payload = {
+        waste_type_id: Number(depositData.waste_type_id || 1),
         weight_kg: parseFloat(depositData.weight),
-        notes: depositData.notes || '',
-        drop_point_id: depositData.drop_point_id || 1
-      });
-    } catch (e) {
-      // Abaikan jika offline
+        drop_point_id: depositData.drop_point_id ? Number(depositData.drop_point_id) : null,
+        notes: depositData.notes || ''
+      };
+
+      const res = await depositApi.create(payload);
+      if (res.success && res.data) {
+        apiSuccess = true;
+        savedItem = formatApiDeposit(res.data);
+        // Refresh profile to get updated points
+        loadUserData(token);
+      }
     }
 
-    setDeposits(prev => [newDepositItem, ...prev]);
-    return newDepositItem;
+    // If not from API or API failed, create local fallback item
+    if (!savedItem) {
+      const newId = `DEP-${new Date().getFullYear()}-${String(deposits.length + 1).padStart(3, '0')}`;
+      const newDate = new Date().toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      savedItem = {
+        id: newId,
+        date: newDate,
+        category: depositData.category,
+        type: depositData.type,
+        weight: parseFloat(depositData.weight),
+        points: Math.floor(depositData.points),
+        status: 'verified',
+        location: depositData.location || 'Drop Point EcoPoints Pusat'
+      };
+
+      // Add points to local user
+      setUser(prev => ({
+        ...prev,
+        points: (prev?.points || 0) + Math.floor(depositData.points)
+      }));
+    }
+
+    setDeposits(prev => [savedItem, ...prev]);
+
+    // Record credit transaction
+    const newTxn = {
+      id: 'TXN-' + Math.floor(1000 + Math.random() * 9000),
+      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      description: `Setoran ${savedItem.type} ${savedItem.weight}kg [${savedItem.id}]`,
+      type: 'credit',
+      amount: savedItem.points,
+      balance: (user?.points || 0) + savedItem.points
+    };
+    setTransactions(prev => [newTxn, ...prev]);
+
+    return { success: true, data: savedItem, apiSuccess };
   };
 
   const redeemReward = async (rewardId) => {
-    const reward = rewards.find(r => r.id === rewardId);
+    const reward = rewards.find(r => r.id === rewardId || String(r.id) === String(rewardId));
     if (!reward) {
       return { success: false, message: 'Reward tidak ditemukan.' };
     }
@@ -384,15 +458,33 @@ export function AuthProvider({ children }) {
       return { success: false, message: 'Poin Anda tidak mencukupi untuk menukar reward ini.' };
     }
 
-    const newBalance = user.points - reward.cost;
-
-    // Coba kirim ke API jika ada endpoint redeem
-    try {
-      await rewardApi.redeem(rewardId);
-    } catch (e) {
-      // Offline fallback
+    // Call Go API redeem endpoint
+    if (token) {
+      const res = await rewardApi.redeem(reward.id);
+      if (res.success && res.data) {
+        setUser(prev => ({
+          ...prev,
+          points: res.data.new_balance
+        }));
+        setRewards(prev =>
+          prev.map(r => (r.id === reward.id ? { ...r, stock: Math.max(0, r.stock - 1) } : r))
+        );
+        const newTxn = {
+          id: 'TXN-' + Math.floor(1000 + Math.random() * 9000),
+          date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+          description: `Penukaran ${reward.name}`,
+          type: 'debit',
+          amount: reward.cost,
+          balance: res.data.new_balance
+        };
+        setTransactions(prev => [newTxn, ...prev]);
+        loadUserData(token);
+        return { success: true, message: res.message || `Berhasil menukarkan ${reward.name}!` };
+      }
     }
 
+    // Local fallback
+    const newBalance = user.points - reward.cost;
     setUser(prev => ({
       ...prev,
       points: newBalance
@@ -409,7 +501,7 @@ export function AuthProvider({ children }) {
 
     setTransactions(prev => [newTxn, ...prev]);
     setRewards(prev =>
-      prev.map(r => (r.id === rewardId ? { ...r, stock: Math.max(0, r.stock - 1) } : r))
+      prev.map(r => (r.id === reward.id ? { ...r, stock: Math.max(0, r.stock - 1) } : r))
     );
 
     return { success: true, message: `Berhasil menukarkan ${reward.name}!` };
@@ -421,6 +513,8 @@ export function AuthProvider({ children }) {
         user,
         token,
         apiConnected,
+        wasteTypes,
+        dropPoints,
         isAuthenticated: !!user,
         deposits,
         transactions,
@@ -429,7 +523,8 @@ export function AuthProvider({ children }) {
         register,
         logout,
         addDeposit,
-        redeemReward
+        redeemReward,
+        refreshData: loadMasterData
       }}
     >
       {children}

@@ -12,11 +12,16 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !password || !confirmPassword) {
       setError('Harap lengkapi semua bidang.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Kata sandi minimal harus 6 karakter.');
       return;
     }
     if (password !== confirmPassword) {
@@ -24,8 +29,17 @@ export default function RegisterPage() {
       return;
     }
 
-    register(name, email, password);
-    navigate('/dashboard');
+    setError('');
+    setLoading(true);
+
+    const res = await register(name, email, password);
+    setLoading(false);
+
+    if (res.success) {
+      navigate('/dashboard');
+    } else {
+      setError(res.message || 'Pendaftaran gagal. Silakan coba lagi.');
+    }
   };
 
   return (
@@ -176,9 +190,10 @@ export default function RegisterPage() {
             type="submit"
             variant="primary"
             size="md"
+            disabled={loading}
             style={{ width: '100%' }}
           >
-            Selesaikan Pendaftaran →
+            {loading ? 'Membuat Akun...' : 'Selesaikan Pendaftaran →'}
           </Button>
         </form>
 

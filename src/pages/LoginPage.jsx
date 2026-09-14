@@ -8,26 +8,50 @@ export default function LoginPage() {
   const location = useLocation();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('nasabah@ecopoints.id');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('budi@ecopoints.test');
+  const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  const rawFrom = location.state?.from?.pathname;
+  const destination = (rawFrom && rawFrom !== '/login') ? rawFrom : '/dashboard';
 
-  const handleSubmit = (e) => {
+  // Jika sudah login, langsung alihkan ke dashboard
+  React.useEffect(() => {
+    const savedToken = localStorage.getItem('ep_token');
+    if (savedToken) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Harap masukkan email dan kata sandi.');
       return;
     }
 
-    login(email, password);
-    navigate(from, { replace: true });
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await login(email, password);
+      setLoading(false);
+
+      if (res && res.success) {
+        navigate(destination, { replace: true });
+      } else {
+        setError(res?.message || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.');
+      }
+    } catch (err) {
+      setLoading(false);
+      setError('Terjadi kesalahan koneksi. Silakan coba lagi.');
+    }
   };
 
-  const handleDemoFill = () => {
-    setEmail('nasabah@ecopoints.id');
-    setPassword('password123');
+  const handleDemoFill = (demoEmail = 'budi@ecopoints.test', demoPass = 'password') => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
     setError('');
   };
 
@@ -141,9 +165,10 @@ export default function LoginPage() {
             type="submit"
             variant="primary"
             size="md"
+            disabled={loading}
             style={{ width: '100%', marginTop: '0.5rem' }}
           >
-            Masuk Sekarang →
+            {loading ? 'Memverifikasi...' : 'Masuk Sekarang →'}
           </Button>
 
           {/* Quick Demo Helper */}
@@ -156,22 +181,38 @@ export default function LoginPage() {
               textAlign: 'center'
             }}
           >
-            <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', marginBottom: '0.375rem' }}>
-              AKUN DEMO CEPAT:
+            <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', marginBottom: '0.5rem' }}>
+              AKUN DATABASE CEPAT:
             </div>
-            <button
-              type="button"
-              onClick={handleDemoFill}
-              className="font-mono"
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--color-primary)',
-                fontWeight: 600,
-                textDecoration: 'underline'
-              }}
-            >
-              Gunakan: nasabah@ecopoints.id
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => handleDemoFill('budi@ecopoints.test', 'password')}
+                className="font-mono"
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--color-primary)',
+                  fontWeight: 600,
+                  textDecoration: 'underline'
+                }}
+              >
+                Nasabah: budi@ecopoints.test
+              </button>
+              <span className="text-faint">|</span>
+              <button
+                type="button"
+                onClick={() => handleDemoFill('admin@ecopoints.test', 'password')}
+                className="font-mono"
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--color-primary)',
+                  fontWeight: 600,
+                  textDecoration: 'underline'
+                }}
+              >
+                Admin
+              </button>
+            </div>
           </div>
         </form>
 

@@ -5,8 +5,27 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090/api/v1';
 
+let inMemoryToken = typeof window !== 'undefined' ? localStorage.getItem('ep_token') : null;
+
+export function setAuthToken(token) {
+  inMemoryToken = token;
+  if (token) {
+    localStorage.setItem('ep_token', token);
+  } else {
+    localStorage.removeItem('ep_token');
+  }
+}
+
+export function getAuthToken() {
+  if (inMemoryToken) return inMemoryToken;
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('ep_token');
+  }
+  return null;
+}
+
 export async function request(endpoint, options = {}) {
-  const token = localStorage.getItem('ep_token');
+  const token = options.token || getAuthToken();
 
   const headers = {
     'Content-Type': 'application/json',
@@ -22,9 +41,9 @@ export async function request(endpoint, options = {}) {
   try {
     const res = await fetch(`${BASE_URL}${endpoint}`, config);
 
-    // Auto-logout jika 401 Unauthorized
-    if (res.status === 401) {
-      localStorage.removeItem('ep_token');
+    // Auto-logout jika 401 Unauthorized (kecuali saat mencoba login/register)
+    if (res.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+      setAuthToken(null);
       localStorage.removeItem('ep_user');
       // trigger custom event agar UI tahu
       window.dispatchEvent(new Event('ep_unauthorized'));
@@ -48,6 +67,21 @@ export async function request(endpoint, options = {}) {
   }
 }
 
+// Health Check
+export const healthApi = {
+  check: async () => {
+    try {
+      const rootUrl = BASE_URL.replace(/\/api\/v1\/?$/, '');
+      const res = await fetch(`${rootUrl}/health`);
+      if (!res.ok) return { success: false };
+      const data = await res.json();
+      return { success: true, data: data?.data };
+    } catch {
+      return { success: false };
+    }
+  }
+};
+
 // Auth APIs
 export const authApi = {
   login: (email, password) =>
@@ -60,7 +94,7 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ name, email, password })
     }),
-  getMe: () => request('/auth/me')
+  getMe: (token) => request('/auth/me', token ? { token } : {})
 };
 
 // Waste Types & Drop Points
@@ -95,9 +129,66 @@ export const rewardApi = {
     })
 };
 
+// Points & Transactions
+export const pointApi = {
+  getTransactions: () => request('/point-transactions')
+};
+
+// Admin APIs
+export const adminApi = {
+  // Deposit management
+  updateDepositStatus: (id, status, notes) =>
+    request(`/waste-deposits/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes })
+    }),
+
+  // Waste type CRUD
+  createWasteType: (payload) =>
+    request('/waste-types', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  updateWasteType: (id, payload) =>
+    request(`/waste-types/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    }),
+  deleteWasteType: (id) =>
+    request(`/waste-types/${id}`, { method: 'DELETE' }),
+
+  // Reward CRUD
+  createReward: (payload) =>
+    request('/rewards', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  updateReward: (id, payload) =>
+    request(`/rewards/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    }),
+  deleteReward: (id) =>
+    request(`/rewards/${id}`, { method: 'DELETE' }),
+
+  // Redemptions
+  getRedemptions: () => request('/reward-redemptions'),
+  updateRedemptionStatus: (id, status, notes) =>
+    request(`/reward-redemptions/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes })
+    }),
+
+  // Reports
+  getReportsSummary: () => request('/reports/summary')
+};
+
 export default {
   auth: authApi,
   master: masterApi,
   deposits: depositApi,
-  rewards: rewardApi
+  rewards: rewardApi,
+  points: pointApi,
+  health: healthApi,
+  admin: adminApi
 };
