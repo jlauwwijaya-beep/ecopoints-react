@@ -7,3 +7,8 @@
   from = "/health"
   to = "http://139.190.96.203:8092/health"
   status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
