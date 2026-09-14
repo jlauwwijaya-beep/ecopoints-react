@@ -63,7 +63,7 @@ export default function AdminUsersPage() {
         </div>
         {error && <div style={{ padding: '0.75rem', marginBottom: '1rem', border: '1px solid #e5a39a', background: '#fff3f1', color: '#a63225' }}>{error}</div>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="admin-management-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
           <form className="card" style={{ padding: '1.25rem' }} onSubmit={saveUser}>
             <h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}>{editing ? 'Edit Akun' : 'Tambah Akun'}</h2>
             <div className="form-group"><label className="form-label">Nama</label><input className="form-input" value={form.name} onChange={e => updateField('name', e.target.value)} pattern="[A-Za-z ]+" required /></div>

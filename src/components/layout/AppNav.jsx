@@ -97,7 +97,7 @@ export default function AppNav() {
         </div>
 
         {/* Right: User points & profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+        <div className="app-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
           {/* API Status Indicator */}
           <div
             title={apiConnected ? 'API Backend Terhubung' : 'API Backend Offline'}
@@ -130,7 +130,7 @@ export default function AppNav() {
 
           {/* User Points Badge */}
           <div
-            className="font-mono tabular-nums"
+            className="font-mono tabular-nums nav-points-badge"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -237,6 +237,21 @@ export default function AppNav() {
         @media (max-width: 640px) {
           .api-status-badge {
             display: none !important;
+          }
+        }
+        @media (max-width: 767px) {
+          .app-nav-actions {
+            gap: 0.375rem !important;
+          }
+          .nav-points-badge {
+            padding: 0.375rem 0.5rem !important;
+          }
+          .nav-points-badge .text-faint {
+            display: none;
+          }
+          .app-nav-actions .btn {
+            padding-left: 0.4rem !important;
+            padding-right: 0.4rem !important;
           }
         }
       `}</style>

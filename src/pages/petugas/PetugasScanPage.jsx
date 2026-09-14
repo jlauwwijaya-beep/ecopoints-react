@@ -98,7 +98,7 @@ export default function PetugasScanPage() {
 
           {scanError && <div style={{ padding: '0.75rem', marginBottom: '1rem', border: '1px solid #e5a39a', background: '#fff3f1', color: '#a63225' }}>{scanError}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) minmax(280px, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+          <div className="petugas-scan-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) minmax(280px, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
             <section className="card" style={{ padding: '1.25rem' }}>
               <h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Arahkan kamera ke QR user</h2>
               <div id="petugas-qr-reader" style={{ width: '100%' }} />

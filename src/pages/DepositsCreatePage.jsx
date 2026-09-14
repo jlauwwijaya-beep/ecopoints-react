@@ -246,7 +246,7 @@ export default function DepositsCreatePage() {
                     <label className="form-label">
                       1. Kategori Sampah
                     </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                    <div className="deposit-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                       {[
                         { id: 'organik', label: 'Organik', color: 'organik' },
                         { id: 'anorganik', label: 'Anorganik', color: 'anorganik' },
