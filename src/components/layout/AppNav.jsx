@@ -88,7 +88,7 @@ export default function AppNav() {
           >
             <NavLink to="/dashboard">Dashboard</NavLink>
             <NavLink to="/deposits/create">Input Setoran</NavLink>
-            <NavLink to="/deposits">Riwayat Setoran</NavLink>
+            <NavLink to="/deposits" end>Riwayat Setoran</NavLink>
             <NavLink to="/points">Poin</NavLink>
             <NavLink to="/rewards">Reward</NavLink>
             {user?.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
@@ -212,7 +212,7 @@ export default function AppNav() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <NavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)}>Dashboard</NavLink>
             <NavLink to="/deposits/create" onClick={() => setMobileMenuOpen(false)}>Input Setoran</NavLink>
-            <NavLink to="/deposits" onClick={() => setMobileMenuOpen(false)}>Riwayat Setoran</NavLink>
+            <NavLink to="/deposits" end onClick={() => setMobileMenuOpen(false)}>Riwayat Setoran</NavLink>
             <NavLink to="/points" onClick={() => setMobileMenuOpen(false)}>Poin</NavLink>
             <NavLink to="/rewards" onClick={() => setMobileMenuOpen(false)}>Reward</NavLink>
             {user?.role === 'admin' && <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin</NavLink>}

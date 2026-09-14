@@ -50,12 +50,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoFill = (demoEmail = 'budi@ecopoints.test', demoPass = 'password') => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError('');
-  };
-
   return (
     <div
       style={{
@@ -172,49 +166,6 @@ export default function LoginPage() {
             {loading ? 'Memverifikasi...' : 'Masuk Sekarang →'}
           </Button>
 
-          {/* Quick Demo Helper */}
-          <div
-            style={{
-              marginTop: '1.25rem',
-              padding: '0.75rem',
-              backgroundColor: 'var(--color-paper)',
-              border: '1px dashed var(--color-border)',
-              textAlign: 'center'
-            }}
-          >
-            <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', marginBottom: '0.5rem' }}>
-              AKUN DATABASE CEPAT:
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
-              <button
-                type="button"
-                onClick={() => handleDemoFill('budi@ecopoints.test', 'password')}
-                className="font-mono"
-                style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--color-primary)',
-                  fontWeight: 600,
-                  textDecoration: 'underline'
-                }}
-              >
-                Nasabah: budi@ecopoints.test
-              </button>
-              <span className="text-faint">|</span>
-              <button
-                type="button"
-                onClick={() => handleDemoFill('admin@ecopoints.test', 'password')}
-                className="font-mono"
-                style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--color-primary)',
-                  fontWeight: 600,
-                  textDecoration: 'underline'
-                }}
-              >
-                Admin
-              </button>
-            </div>
-          </div>
         </form>
 
         {/* Footer Link to Register */}
