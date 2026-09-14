@@ -39,7 +39,11 @@ export default function LoginPage() {
       setLoading(false);
 
       if (res && res.success) {
-        const target = res.user?.role === 'admin' && destination === '/dashboard' ? '/admin' : destination;
+        const target = res.user?.role === 'admin' && destination === '/dashboard'
+          ? '/admin'
+          : res.user?.role === 'petugas' && destination === '/dashboard'
+            ? '/petugas/scan'
+            : destination;
         navigate(target, { replace: true });
       } else {
         setError(res?.message || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.');

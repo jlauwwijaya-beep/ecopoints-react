@@ -20,6 +20,10 @@ export default function RegisterPage() {
       setError('Harap lengkapi semua bidang.');
       return;
     }
+    if (!/^[A-Za-z ]+$/.test(name.trim())) {
+      setError('Nama hanya boleh berisi huruf alfabet dan spasi.');
+      return;
+    }
     if (password.length < 6) {
       setError('Kata sandi minimal harus 6 karakter.');
       return;
@@ -120,6 +124,8 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Contoh: Siti Rahmawati"
+              pattern="[A-Za-z ]+"
+              title="Nama hanya boleh berisi huruf alfabet dan spasi."
               required
             />
           </div>

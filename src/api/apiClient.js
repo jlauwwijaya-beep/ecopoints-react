@@ -137,10 +137,10 @@ export const pointApi = {
 // Admin APIs
 export const adminApi = {
   // Deposit management
-  updateDepositStatus: (id, status, notes) =>
+  updateDepositStatus: (id, status, notes, weightKg) =>
     request(`/waste-deposits/${id}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ status, notes })
+      body: JSON.stringify({ status, notes, ...(weightKg ? { weight_kg: Number(weightKg) } : {}) })
     }),
 
   // Waste type CRUD
@@ -180,7 +180,13 @@ export const adminApi = {
     }),
 
   // Reports
-  getReportsSummary: () => request('/reports/summary')
+  getReportsSummary: () => request('/reports/summary'),
+
+  // User management
+  getUsers: () => request('/admin/users'),
+  createUser: (payload) => request('/admin/users', { method: 'POST', body: JSON.stringify(payload) }),
+  updateUser: (id, payload) => request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' })
 };
 
 export default {

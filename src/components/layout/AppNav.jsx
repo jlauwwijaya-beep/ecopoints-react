@@ -91,7 +91,8 @@ export default function AppNav() {
             <NavLink to="/deposits" end>Riwayat Setoran</NavLink>
             <NavLink to="/points">Poin</NavLink>
             <NavLink to="/rewards">Reward</NavLink>
-            {(user?.role === 'admin' || user?.role === 'petugas') && <NavLink to="/admin">Admin</NavLink>}
+            {user?.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
+            {user?.role === 'petugas' && <NavLink to="/petugas/scan">Petugas</NavLink>}
           </nav>
         </div>
 
@@ -215,7 +216,8 @@ export default function AppNav() {
             <NavLink to="/deposits" end onClick={() => setMobileMenuOpen(false)}>Riwayat Setoran</NavLink>
             <NavLink to="/points" onClick={() => setMobileMenuOpen(false)}>Poin</NavLink>
             <NavLink to="/rewards" onClick={() => setMobileMenuOpen(false)}>Reward</NavLink>
-            {(user?.role === 'admin' || user?.role === 'petugas') && <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin</NavLink>}
+            {user?.role === 'admin' && <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin</NavLink>}
+            {user?.role === 'petugas' && <NavLink to="/petugas/scan" onClick={() => setMobileMenuOpen(false)}>Petugas</NavLink>}
           </div>
         </div>
       )}

@@ -134,6 +134,16 @@ export function AuthProvider({ children }) {
     }
   });
 
+  const [hiddenDepositIds, setHiddenDepositIds] = useState(() => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('ep_user') || 'null');
+      const saved = localStorage.getItem(`ep_hidden_deposits_${savedUser?.id || 'guest'}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [deposits, setDeposits] = useState(() => {
     try {
       if (localStorage.getItem('ep_token')) return [];
@@ -223,7 +233,9 @@ export function AuthProvider({ children }) {
     // 2. Get user deposits
     const depRes = await depositApi.getAll();
     if (depRes.success && Array.isArray(depRes.data)) {
-      const formatted = depRes.data.map(formatApiDeposit);
+      const formatted = depRes.data
+        .map(formatApiDeposit)
+        .filter(deposit => !hiddenDepositIds.includes(String(deposit.rawId)));
       setDeposits(formatted);
     }
 
@@ -234,7 +246,7 @@ export function AuthProvider({ children }) {
       const formattedTxns = txnRes.data.map(t => formatApiTransaction(t, userPoints));
       setTransactions(formattedTxns);
     }
-  }, []);
+  }, [hiddenDepositIds]);
 
   // Handle 401 unauthorized
   useEffect(() => {
@@ -278,6 +290,10 @@ export function AuthProvider({ children }) {
   }, [deposits]);
 
   useEffect(() => {
+    localStorage.setItem(`ep_hidden_deposits_${user?.id || 'guest'}`, JSON.stringify(hiddenDepositIds));
+  }, [hiddenDepositIds, user]);
+
+  useEffect(() => {
     localStorage.setItem('ep_transactions', JSON.stringify(transactions));
   }, [transactions]);
 
@@ -313,6 +329,8 @@ export function AuthProvider({ children }) {
       setUser(userData);
       setDeposits([]);
       setTransactions([]);
+      const savedHidden = localStorage.getItem(`ep_hidden_deposits_${userData.id}`);
+      setHiddenDepositIds(savedHidden ? JSON.parse(savedHidden) : []);
       setApiConnected(true);
 
       // Load remote deposits and master data for this session asynchronously
@@ -383,6 +401,12 @@ export function AuthProvider({ children }) {
     setAuthToken(null);
     localStorage.removeItem('ep_token');
     localStorage.removeItem('ep_user');
+  };
+
+  const clearDepositHistory = () => {
+    const ids = deposits.map(deposit => String(deposit.rawId ?? deposit.id));
+    setHiddenDepositIds(previous => [...new Set([...previous, ...ids])]);
+    setDeposits([]);
   };
 
   const addDeposit = async (depositData) => {
@@ -527,6 +551,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!user,
         deposits,
         transactions,
+        clearDepositHistory,
         rewards,
         login,
         register,

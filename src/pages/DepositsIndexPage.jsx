@@ -7,9 +7,10 @@ import Button from '../components/ui/Button';
 import DataTable from '../components/ui/DataTable';
 import StatusBadge from '../components/ui/StatusBadge';
 import CategoryDot from '../components/ui/CategoryDot';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function DepositsIndexPage() {
-  const { deposits } = useAuth();
+  const { deposits, clearDepositHistory } = useAuth();
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [selectedDeposit, setSelectedDeposit] = useState(null);
@@ -18,6 +19,14 @@ export default function DepositsIndexPage() {
     if (filter === 'all') return true;
     return item.status === filter;
   });
+
+  const handleClearHistory = () => {
+    if (!deposits.length) return;
+    if (window.confirm('Bersihkan riwayat dari tampilan Anda? Data tetap tersimpan di database.')) {
+      clearDepositHistory();
+      setSelectedDeposit(null);
+    }
+  };
 
   const columns = [
     {
@@ -110,11 +119,7 @@ export default function DepositsIndexPage() {
               </h1>
             </div>
 
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => navigate('/deposits/create')}
-            >
+            <Button variant="primary" size="md" onClick={() => navigate('/deposits/create')}>
               + Setor Sampah Baru
             </Button>
           </div>
@@ -155,6 +160,16 @@ export default function DepositsIndexPage() {
                 </button>
               );
             })}
+            <div style={{ marginLeft: 'auto' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleClearHistory}
+                disabled={!deposits.length}
+              >
+                Bersihkan Riwayat
+              </Button>
+            </div>
           </div>
 
           {/* Data Table */}
@@ -233,6 +248,10 @@ export default function DepositsIndexPage() {
                     <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>LOKASI:</span>
                     <span className="font-mono" style={{ fontSize: '0.75rem' }}>{selectedDeposit.location}</span>
                   </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>STATUS:</span>
+                    <StatusBadge status={selectedDeposit.status} />
+                  </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid var(--color-ink)', paddingTop: '0.75rem', marginTop: '0.75rem' }}>
                     <span className="font-mono" style={{ fontWeight: 700 }}>POIN DIPEROLEH:</span>
                     <span className="font-mono text-poin" style={{ fontWeight: 800, fontSize: '1.125rem' }}>
@@ -240,6 +259,22 @@ export default function DepositsIndexPage() {
                     </span>
                   </div>
                 </div>
+
+                {selectedDeposit.status === 'pending' && selectedDeposit.rawId && (
+                  <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                    <div style={{ display: 'inline-block', padding: '0.625rem', background: '#fff', border: '1px solid var(--color-border)' }}>
+                      <QRCodeSVG
+                        value={JSON.stringify({ type: 'ecopoints-deposit', deposit_id: selectedDeposit.rawId })}
+                        size={160}
+                        level="M"
+                        includeMargin
+                      />
+                    </div>
+                    <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', marginTop: '0.5rem' }}>
+                      QR SETORAN UNTUK PETUGAS
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button variant="secondary" size="sm" onClick={() => setSelectedDeposit(null)}>

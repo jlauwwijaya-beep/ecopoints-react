@@ -2,17 +2,16 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export default function AdminRoute({ children }) {
+export default function PetugasRoute({ children }) {
   const { isAuthenticated, token, user } = useAuth();
   const location = useLocation();
-
   const hasAuth = isAuthenticated || !!user || !!token || !!localStorage.getItem('ep_token');
 
   if (!hasAuth) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'petugas') {
     return <Navigate to="/dashboard" replace />;
   }
 

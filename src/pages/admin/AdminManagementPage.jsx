@@ -17,7 +17,8 @@ const navItems = [
   ['points', 'Konfigurasi Poin', '/admin/points'],
   ['rewards', 'Katalog Hadiah', '/admin/rewards'],
   ['redemptions', 'Pantau Penukaran', '/admin/redemptions'],
-  ['reports', 'Laporan', '/admin/reports']
+  ['reports', 'Laporan', '/admin/reports'],
+  ['users', 'Manajemen Akun', '/admin/users']
 ];
 
 function formatDate(value) {

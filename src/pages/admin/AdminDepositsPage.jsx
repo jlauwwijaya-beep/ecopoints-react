@@ -8,6 +8,7 @@ export default function AdminDepositsPage() {
   const [filter, setFilter] = useState('all');
   const [modal, setModal] = useState(null); // { deposit, action: 'verify'|'reject' }
   const [notes, setNotes] = useState('');
+  const [actualWeight, setActualWeight] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,13 +30,18 @@ export default function AdminDepositsPage() {
 
   const handleAction = async () => {
     if (!modal) return;
+    if (modal.action === 'verify' && (!actualWeight || Number(actualWeight) <= 0)) {
+      setError('Masukkan berat aktual hasil timbangan sebelum verifikasi.');
+      return;
+    }
     setActionLoading(true);
     const status = modal.action === 'verify' ? 'verified' : 'rejected';
-    const res = await adminApi.updateDepositStatus(modal.deposit.id, status, notes || undefined);
+    const res = await adminApi.updateDepositStatus(modal.deposit.id, status, notes || undefined, actualWeight || undefined);
     if (res.success) {
       await loadDeposits();
       setModal(null);
       setNotes('');
+      setActualWeight('');
     } else {
       setError(res.error || 'Status setoran gagal diperbarui.');
     }
@@ -158,12 +164,12 @@ export default function AdminDepositsPage() {
                         <div style={{ display: 'flex', gap: '0.375rem' }}>
                           <button
                             className="btn btn-sm btn-primary"
-                            onClick={() => { setModal({ deposit: d, action: 'verify' }); setNotes(''); }}
+                            onClick={() => { setModal({ deposit: d, action: 'verify' }); setNotes(''); setActualWeight(String(d.weight_kg || '')); }}
                             style={{ fontSize: '0.6875rem' }}
                           >✓ Verifikasi</button>
                           <button
                             className="btn btn-sm btn-danger"
-                            onClick={() => { setModal({ deposit: d, action: 'reject' }); setNotes(''); }}
+                            onClick={() => { setModal({ deposit: d, action: 'reject' }); setNotes(''); setActualWeight(String(d.weight_kg || '')); }}
                             style={{ fontSize: '0.6875rem' }}
                           >✗ Tolak</button>
                         </div>
@@ -222,12 +228,30 @@ export default function AdminDepositsPage() {
                     <span className="receipt-row-value">{modal.deposit.weight_kg?.toFixed(1)} kg</span>
                   </div>
                   <div className="receipt-total">
-                    <span>Estimasi Poin</span>
+                    <span>{modal.action === 'verify' ? 'Poin Setelah Verifikasi' : 'Estimasi Poin'}</span>
                     <span style={{ color: 'var(--color-poin)' }}>
-                      ★ {modal.deposit.points_earned || Math.round((modal.deposit.weight_kg || 0) * (modal.deposit.waste_type?.points_per_kg || 500))}
+                      ★ {modal.action === 'verify'
+                        ? Math.floor(Number(actualWeight || 0) * Number(modal.deposit.waste_type?.points_per_kg || 500))
+                        : (modal.deposit.points_earned || Math.round((modal.deposit.weight_kg || 0) * (modal.deposit.waste_type?.points_per_kg || 500)))}
                     </span>
                   </div>
                 </div>
+
+                {modal.action === 'verify' && (
+                  <div className="form-group">
+                    <label className="form-label">Berat aktual setelah ditimbang (kg)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={actualWeight}
+                      onChange={e => setActualWeight(e.target.value)}
+                      required
+                    />
+                    <p className="form-hint">Poin akan dihitung ulang berdasarkan berat aktual ini.</p>
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label">Catatan Petugas (Opsional)</label>

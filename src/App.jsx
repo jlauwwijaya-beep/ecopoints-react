@@ -13,7 +13,10 @@ import PointsPage from './pages/PointsPage';
 import RewardsPage from './pages/RewardsPage';
 import AdminDepositsPage from './pages/admin/AdminDepositsPage';
 import AdminManagementPage from './pages/admin/AdminManagementPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminRoute from './components/auth/AdminRoute';
+import PetugasRoute from './components/auth/PetugasRoute';
+import PetugasScanPage from './pages/petugas/PetugasScanPage';
 
 export default function App() {
   return (
@@ -114,6 +117,24 @@ export default function App() {
               <AdminRoute>
                 <AdminManagementPage section="reports" />
               </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <AdminUsersPage />
+              </AdminRoute>
+            }
+          />
+
+          {/* Petugas Routes */}
+          <Route
+            path="/petugas/scan"
+            element={
+              <PetugasRoute>
+                <PetugasScanPage />
+              </PetugasRoute>
             }
           />
 
