@@ -136,6 +136,7 @@ export function AuthProvider({ children }) {
 
   const [deposits, setDeposits] = useState(() => {
     try {
+      if (localStorage.getItem('ep_token')) return [];
       const saved = localStorage.getItem('ep_deposits');
       return saved ? JSON.parse(saved) : INITIAL_DEPOSITS;
     } catch {
@@ -145,6 +146,7 @@ export function AuthProvider({ children }) {
 
   const [transactions, setTransactions] = useState(() => {
     try {
+      if (localStorage.getItem('ep_token')) return [];
       const saved = localStorage.getItem('ep_transactions');
       return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
     } catch {
@@ -220,14 +222,14 @@ export function AuthProvider({ children }) {
 
     // 2. Get user deposits
     const depRes = await depositApi.getAll();
-    if (depRes.success && Array.isArray(depRes.data) && depRes.data.length > 0) {
+    if (depRes.success && Array.isArray(depRes.data)) {
       const formatted = depRes.data.map(formatApiDeposit);
       setDeposits(formatted);
     }
 
     // 3. Get point transactions
     const txnRes = await pointApi.getTransactions();
-    if (txnRes.success && Array.isArray(txnRes.data) && txnRes.data.length > 0) {
+    if (txnRes.success && Array.isArray(txnRes.data)) {
       const userPoints = meRes.success && meRes.data ? (meRes.data.points_balance ?? meRes.data.points ?? 0) : 0;
       const formattedTxns = txnRes.data.map(t => formatApiTransaction(t, userPoints));
       setTransactions(formattedTxns);
@@ -309,6 +311,8 @@ export function AuthProvider({ children }) {
 
       setToken(authToken);
       setUser(userData);
+      setDeposits([]);
+      setTransactions([]);
       setApiConnected(true);
 
       // Load remote deposits and master data for this session asynchronously
@@ -434,6 +438,10 @@ export function AuthProvider({ children }) {
 
     setDeposits(prev => [savedItem, ...prev]);
 
+    if (apiSuccess) {
+      return { success: true, data: savedItem, apiSuccess: true };
+    }
+
     // Record credit transaction
     const newTxn = {
       id: 'TXN-' + Math.floor(1000 + Math.random() * 9000),
@@ -462,9 +470,10 @@ export function AuthProvider({ children }) {
     if (token) {
       const res = await rewardApi.redeem(reward.id);
       if (res.success && res.data) {
+        const newBalance = Number(res.data.new_balance ?? 0);
         setUser(prev => ({
           ...prev,
-          points: res.data.new_balance
+          points: newBalance
         }));
         setRewards(prev =>
           prev.map(r => (r.id === reward.id ? { ...r, stock: Math.max(0, r.stock - 1) } : r))
@@ -475,7 +484,7 @@ export function AuthProvider({ children }) {
           description: `Penukaran ${reward.name}`,
           type: 'debit',
           amount: reward.cost,
-          balance: res.data.new_balance
+          balance: newBalance
         };
         setTransactions(prev => [newTxn, ...prev]);
         loadUserData(token);

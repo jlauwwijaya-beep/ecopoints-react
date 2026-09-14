@@ -9,12 +9,16 @@ export default function AdminDepositsPage() {
   const [modal, setModal] = useState(null); // { deposit, action: 'verify'|'reject' }
   const [notes, setNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const loadDeposits = useCallback(async () => {
     setLoading(true);
+    setError('');
     const res = await depositApi.getAll();
     if (res.success && Array.isArray(res.data)) {
       setDeposits(res.data);
+    } else if (!res.success) {
+      setError(res.error || 'Data setoran tidak dapat dimuat.');
     }
     setLoading(false);
   }, []);
@@ -32,6 +36,8 @@ export default function AdminDepositsPage() {
       await loadDeposits();
       setModal(null);
       setNotes('');
+    } else {
+      setError(res.error || 'Status setoran gagal diperbarui.');
     }
     setActionLoading(false);
   };
@@ -75,6 +81,8 @@ export default function AdminDepositsPage() {
             </div>
           </div>
         </div>
+
+        {error && <div style={{ padding: '0.75rem', marginBottom: '1rem', border: '1px solid #e5a39a', background: '#fff3f1', color: '#a63225' }}>{error}</div>}
 
         {/* Filter Tabs */}
         <div style={{

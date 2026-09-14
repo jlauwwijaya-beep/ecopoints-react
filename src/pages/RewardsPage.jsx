@@ -18,9 +18,17 @@ export default function RewardsPage() {
   const handleConfirmRedeem = async () => {
     if (!selectedReward || loadingRedeem) return;
     setLoadingRedeem(true);
-    const res = await redeemReward(selectedReward.id);
+    let res;
+    try {
+      res = await redeemReward(selectedReward.id);
+    } catch (error) {
+      res = {
+        success: false,
+        message: error?.message || 'Penukaran reward gagal. Silakan coba lagi.'
+      };
+    }
     setLoadingRedeem(false);
-    setRedeemStatus(res);
+    setRedeemStatus(res || { success: false, message: 'Penukaran reward gagal. Silakan coba lagi.' });
   };
 
   return (
