@@ -38,7 +38,14 @@ export default function DepositsCreatePage() {
   // Filtered waste types from API based on selected category
   const filteredWasteTypes = useMemo(() => {
     if (wasteTypes && wasteTypes.length > 0) {
-      return wasteTypes.filter(wt => classifyCategory(wt.name) === category && wt.is_active !== false);
+      const seenNames = new Set();
+      return wasteTypes.filter((wt) => {
+        if (classifyCategory(wt.name) !== category || wt.is_active === false) return false;
+        const normalizedName = (wt.name || '').trim().toLowerCase();
+        if (seenNames.has(normalizedName)) return false;
+        seenNames.add(normalizedName);
+        return true;
+      });
     }
     return [];
   }, [wasteTypes, category]);
@@ -46,6 +53,9 @@ export default function DepositsCreatePage() {
   const currentPointsPerKg = selectedWasteType
     ? selectedWasteType.points_per_kg
     : (filteredWasteTypes[0]?.points_per_kg || fallbackRates[category]?.rate || 300);
+
+  const currentWasteTypeName = selectedWasteType?.name || filteredWasteTypes[0]?.name || fallbackRates[category]?.items[0] || 'Sampah Terpilah';
+  const currentLocation = selectedDropPoint?.name || dropPoints[0]?.name || 'Drop Point EcoPoints Pusat';
 
   const estimatedPoints = Math.floor(weight * currentPointsPerKg);
   const draftId = `DRAFT-DEP-${Math.floor(100 + Math.random() * 900)}`;
@@ -198,9 +208,10 @@ export default function DepositsCreatePage() {
           ) : (
             /* Main Form Grid (2 Columns: Form Left, Digital Scale & Receipt Right) */
             <div
+              className="deposit-form-layout"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
                 gap: '2rem',
                 alignItems: 'start'
               }}
@@ -276,7 +287,7 @@ export default function DepositsCreatePage() {
                     <select
                       id="wasteType"
                       className="form-select"
-                      value={selectedWasteType?.id || ''}
+                      value={selectedWasteType?.id || filteredWasteTypes[0]?.id || ''}
                       onChange={(e) => {
                         const found = filteredWasteTypes.find(wt => String(wt.id) === String(e.target.value));
                         setSelectedWasteType(found || null);
@@ -458,10 +469,10 @@ export default function DepositsCreatePage() {
                   </div>
 
                   <ReceiptRow label="KATEGORI" value={category.toUpperCase()} />
-                  <ReceiptRow label="SUB-ITEM" value={wasteType} />
+                  <ReceiptRow label="SUB-ITEM" value={currentWasteTypeName} />
                   <ReceiptRow label="BERAT BERSIH" value={`${weight.toFixed(1)} KG`} />
-                  <ReceiptRow label="TARIF SATUAN" value={`${currentRate} PTS / KG`} />
-                  <ReceiptRow label="LOKASI" value={location} />
+                  <ReceiptRow label="TARIF SATUAN" value={`${currentPointsPerKg} PTS / KG`} />
+                  <ReceiptRow label="LOKASI" value={currentLocation} />
 
                   <ReceiptRow
                     label="TOTAL ESTIMASI"

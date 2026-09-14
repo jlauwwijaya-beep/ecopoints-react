@@ -11,6 +11,9 @@ import DepositsIndexPage from './pages/DepositsIndexPage';
 import DepositsCreatePage from './pages/DepositsCreatePage';
 import PointsPage from './pages/PointsPage';
 import RewardsPage from './pages/RewardsPage';
+import AdminDepositsPage from './pages/admin/AdminDepositsPage';
+import AdminManagementPage from './pages/admin/AdminManagementPage';
+import AdminRoute from './components/auth/AdminRoute';
 
 export default function App() {
   return (
@@ -61,6 +64,56 @@ export default function App() {
               <ProtectedRoute>
                 <RewardsPage />
               </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminManagementPage section="overview" />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/deposits"
+            element={
+              <AdminRoute>
+                <AdminDepositsPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/points"
+            element={
+              <AdminRoute>
+                <AdminManagementPage section="points" />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/rewards"
+            element={
+              <AdminRoute>
+                <AdminManagementPage section="rewards" />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/redemptions"
+            element={
+              <AdminRoute>
+                <AdminManagementPage section="redemptions" />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <AdminRoute>
+                <AdminManagementPage section="reports" />
+              </AdminRoute>
             }
           />
 
