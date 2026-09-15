@@ -264,7 +264,7 @@ export default function DepositsIndexPage() {
                   <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
                     <div style={{ display: 'inline-block', padding: '0.625rem', background: '#fff', border: '1px solid var(--color-border)' }}>
                       <QRCodeSVG
-                        value={JSON.stringify({ type: 'ecopoints-deposit', deposit_id: selectedDeposit.rawId })}
+                        value={String(selectedDeposit.rawId)}
                         size={160}
                         level="M"
                         includeMargin

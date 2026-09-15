@@ -61,9 +61,7 @@ export default function DepositsCreatePage() {
   const estimatedPoints = Math.floor(weight * currentPointsPerKg);
   const draftId = `DRAFT-DEP-${Math.floor(100 + Math.random() * 900)}`;
 
-  const qrValue = submittedDeposit?.rawId
-    ? JSON.stringify({ type: 'ecopoints-deposit', deposit_id: submittedDeposit.rawId })
-    : '';
+  const qrValue = submittedDeposit?.rawId ? String(submittedDeposit.rawId) : '';
 
   const handleCategoryChange = (newCat) => {
     setCategory(newCat);
