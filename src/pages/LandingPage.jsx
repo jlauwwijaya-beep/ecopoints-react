@@ -423,7 +423,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section: Panduan Pemilahan Sampah (3 Kolom) */}
-      <section
+      {false && <section
         style={{
           padding: '4.5rem 0',
           borderBottom: '1px solid var(--color-border)',
@@ -591,7 +591,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* CTA Bottom Banner */}
       <section style={{ padding: '3.5rem 0', backgroundColor: 'var(--color-paper)' }}>
