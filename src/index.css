@@ -677,3 +677,118 @@ input[type="range"]::-moz-range-thumb {
 .fade-in {
   animation: fadeIn 0.25s ease-out forwards;
 }
+
+/* Infinite Marquee Ticker */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* Shimmer Effect for CTA Button */
+@keyframes shimmerSweep {
+  0% { transform: translateX(-100%) rotate(25deg); }
+  35% { transform: translateX(250%) rotate(25deg); }
+  100% { transform: translateX(250%) rotate(25deg); }
+}
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  animation: shimmerSweep 3.8s infinite ease-in-out;
+}
+
+.btn-shimmer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(38, 71, 58, 0.25);
+}
+
+/* Floating Points Pop Animation */
+@keyframes floatUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-28px) scale(1);
+  }
+}
+
+.float-pop {
+  animation: floatUpFade 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Step Card Interactive Hover */
+.step-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+}
+
+.step-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.step-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 8px 24px rgba(38, 71, 58, 0.12);
+}
+
+.step-card:hover::before {
+  opacity: 1;
+}
+
+/* Gauge Level Bar */
+.scale-gauge-bar {
+  height: 6px;
+  background: var(--color-border);
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.scale-gauge-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7C8A3E, #26473A);
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+

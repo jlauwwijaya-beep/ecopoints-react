@@ -11,6 +11,7 @@ export default function LandingPage() {
   // Interactive Scale Simulator State
   const [weight, setWeight] = useState(4.5);
   const [category, setCategory] = useState('plastik'); // 'plastik' | 'kertas' | 'organik'
+  const [popKey, setPopKey] = useState(0);
 
   const rates = {
     plastik: { label: 'Plastik (PET/HDPE)', rate: 300, unit: 'pts/kg' },
@@ -96,6 +97,7 @@ export default function LandingPage() {
                 <Button
                   variant="primary"
                   size="lg"
+                  className="btn-shimmer"
                   onClick={() => navigate('/register')}
                 >
                   Daftar Jadi Nasabah →
@@ -108,6 +110,38 @@ export default function LandingPage() {
                   Masuk Akun
                 </Button>
               </div>
+
+              {/* Trust & Jaminan Layanan */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: '1.5rem',
+                  marginTop: '2.25rem',
+                  paddingTop: '1.25rem',
+                  borderTop: '1px solid var(--color-border)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem' }}>⚖️</span>
+                  <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
+                    Tera Digital Resmi
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem' }}>⚡</span>
+                  <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
+                    Poin Langsung Masuk
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem' }}>🎁</span>
+                  <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
+                    Tukar Sembako & Saldo
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Right Column — Interactive Scale Simulator */}
@@ -115,7 +149,8 @@ export default function LandingPage() {
               <div
                 className="scale-hud"
                 style={{
-                  boxShadow: '4px 4px 0px rgba(30, 33, 28, 0.15)'
+                  boxShadow: '4px 4px 0px rgba(30, 33, 28, 0.15)',
+                  position: 'relative'
                 }}
               >
                 {/* Header Bar */}
@@ -145,11 +180,27 @@ export default function LandingPage() {
                       {weight.toFixed(1)} <span style={{ fontSize: '1.125rem', fontWeight: 500 }}>KG</span>
                     </div>
                   </div>
-                  <div className="scale-hud-col">
+                  <div className="scale-hud-col" style={{ position: 'relative', overflow: 'visible' }}>
                     <div className="scale-hud-label">ESTIMASI NILAI</div>
                     <div className="scale-hud-value tabular-nums text-poin">
                       +{calculatedPoints.toLocaleString('id-ID')}{' '}
                       <span style={{ fontSize: '1.125rem', fontWeight: 500 }}>PTS</span>
+                    </div>
+                    {/* Floating micro-reward pop */}
+                    <div
+                      key={popKey}
+                      className="float-pop font-mono"
+                      style={{
+                        position: 'absolute',
+                        top: '-0.375rem',
+                        right: '0.75rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'var(--color-organik)',
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      +{calculatedPoints} PTS
                     </div>
                   </div>
                 </div>
@@ -175,7 +226,10 @@ export default function LandingPage() {
                           <button
                             key={item.id}
                             type="button"
-                            onClick={() => setCategory(item.id)}
+                            onClick={() => {
+                              setCategory(item.id);
+                              setPopKey((k) => k + 1);
+                            }}
                             style={{
                               padding: '0.625rem 0.375rem',
                               textAlign: 'center',
@@ -183,8 +237,8 @@ export default function LandingPage() {
                               fontSize: '0.75rem',
                               fontWeight: 600,
                               borderRadius: 0,
-                              border: '1px solid var(--color-ink)',
-                              backgroundColor: isActive ? 'var(--color-ink)' : 'var(--color-paper)',
+                              border: isActive ? '1px solid var(--color-primary)' : '1px solid var(--color-ink)',
+                              backgroundColor: isActive ? 'var(--color-primary)' : 'var(--color-paper)',
                               color: isActive ? 'var(--color-paper)' : 'var(--color-ink)',
                               transition: 'all 0.15s ease'
                             }}
@@ -231,12 +285,22 @@ export default function LandingPage() {
                       max="25"
                       step="0.5"
                       value={weight}
-                      onChange={(e) => setWeight(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
+                      onChange={(e) => {
+                        setWeight(parseFloat(e.target.value));
+                        setPopKey((k) => k + 1);
+                      }}
+                      style={{ width: '100%', accentColor: 'var(--color-primary)' }}
                     />
+                    {/* Capacity Gauge Bar */}
+                    <div className="scale-gauge-bar" title="Indikator Beban Timbangan">
+                      <div
+                        className="scale-gauge-fill"
+                        style={{ width: `${Math.min(100, (weight / 25) * 100)}%` }}
+                      />
+                    </div>
                     <div
                       className="font-mono text-faint"
-                      style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', marginTop: '0.25rem' }}
+                      style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', marginTop: '0.375rem' }}
                     >
                       <span>0.5 KG</span>
                       <span>12.5 KG</span>
@@ -284,6 +348,38 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Infinite Eco-Commodity Marquee Ticker */}
+      <div
+        style={{
+          borderTop: '1px solid var(--color-ink)',
+          borderBottom: '1px solid var(--color-ink)',
+          backgroundColor: 'var(--color-ink)',
+          color: 'var(--color-paper)',
+          padding: '0.625rem 0',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        <div className="marquee-track font-mono" style={{ fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          {[1, 2].map((loop) => (
+            <span key={loop} style={{ display: 'inline-flex', alignItems: 'center', gap: '2rem', paddingRight: '2rem' }}>
+              <span><strong style={{ color: '#98C379' }}>● PLASTIK PET & HDPE</strong> +300 PTS/KG</span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span><strong style={{ color: '#E5C07B' }}>● KERTAS & KARDUS</strong> +150 PTS/KG</span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span><strong style={{ color: '#61AFEF' }}>● ORGANIK KOMPOS</strong> +50 PTS/KG</span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span><strong style={{ color: 'var(--color-poin)' }}>⚡ TERA DIGITAL REAL-TIME</strong></span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span><strong style={{ color: '#98C379' }}>🎁 TUKAR SEMBAKO & SALDO DIGITAL</strong></span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span style={{ color: 'var(--color-paper)' }}>BEBAS MINIMUM PENYETORAN</span>
+              <span style={{ opacity: 0.4 }}>•</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Section: Alur Sirkulasi (4 Langkah) */}
       <section
         style={{
@@ -326,21 +422,25 @@ export default function LandingPage() {
             {[
               {
                 step: '[STEP 01]',
+                icon: '🌱',
                 title: 'Pilah di Sumber',
                 desc: 'Kelompokkan sampah rumah tangga ke dalam wadah organik, anorganik kering, dan limbah B3.'
               },
               {
                 step: '[STEP 02]',
+                icon: '📍',
                 title: 'Bawa ke Drop Point',
                 desc: 'Kunjungi unit bank sampah terdekat di balai RW atau loket stasiun mitra terdaftar.'
               },
               {
                 step: '[STEP 03]',
+                icon: '⚖️',
                 title: 'Penimbangan Riil',
                 desc: 'Petugas melakukan tera kalibrasi timbangan digital dan mencatat berat bersih sampah.'
               },
               {
                 step: '[STEP 04]',
+                icon: '🎁',
                 title: 'Tukar Reward',
                 highlight: true,
                 desc: 'Poin langsung masuk ke akun Anda dan dapat ditukarkan voucher sembako, pulsa, maupun saldo e-wallet.'
@@ -348,6 +448,7 @@ export default function LandingPage() {
             ].map((item, idx) => (
               <div
                 key={idx}
+                className="step-card"
                 style={{
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-surface)',
@@ -355,20 +456,30 @@ export default function LandingPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  minHeight: '180px'
+                  minHeight: '180px',
+                  cursor: 'default'
                 }}
               >
                 <div>
                   <div
-                    className="font-mono tabular-nums"
                     style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: item.highlight ? 'var(--color-poin)' : 'var(--color-ink-muted)',
-                      marginBottom: '0.5rem'
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.625rem'
                     }}
                   >
-                    {item.step}
+                    <div
+                      className="font-mono tabular-nums"
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: item.highlight ? 'var(--color-poin)' : 'var(--color-ink-muted)'
+                      }}
+                    >
+                      {item.step}
+                    </div>
+                    <span style={{ fontSize: '1.125rem' }}>{item.icon}</span>
                   </div>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>
                     {item.title}
