@@ -172,9 +172,9 @@ export const adminApi = {
     request(`/rewards/${id}`, { method: 'DELETE' }),
 
   // Redemptions
-  getRedemptions: () => request('/reward-redemptions'),
+  getRedemptions: () => request('/rewards/redemptions'),
   updateRedemptionStatus: (id, status, notes) =>
-    request(`/reward-redemptions/${id}/status`, {
+    request(`/rewards/redemptions/${id}/${status === 'completed' ? 'verify' : 'reject'}`, {
       method: 'PUT',
       body: JSON.stringify({ status, notes })
     }),
