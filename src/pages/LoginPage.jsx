@@ -78,23 +78,11 @@ export default function LoginPage() {
       >
         {/* Header with Logo */}
         <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              background: 'var(--color-ink)',
-              color: 'var(--color-paper)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              fontSize: '1rem',
-              margin: '0 auto 0.75rem'
-            }}
-          >
-            EP
-          </div>
+          <img
+            src="/logo.png"
+            alt="EcoPoints Logo"
+            style={{ width: 44, height: 44, objectFit: 'contain', margin: '0 auto 0.75rem', display: 'block' }}
+          />
           <h1 style={{ fontSize: '1.375rem', fontWeight: 800, marginBottom: '0.25rem' }}>
             Masuk ke EcoPoints
           </h1>

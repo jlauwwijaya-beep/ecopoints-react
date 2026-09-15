@@ -32,22 +32,11 @@ export default function Footer() {
         >
           {/* Left info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <div
-              style={{
-                width: 22,
-                height: 22,
-                background: 'var(--color-ink)',
-                color: 'var(--color-paper)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.625rem',
-                fontWeight: 700
-              }}
-            >
-              EP
-            </div>
+            <img
+              src="/logo.png"
+              alt="EcoPoints Logo"
+              style={{ width: 22, height: 22, objectFit: 'contain' }}
+            />
             <span className="font-mono" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>
               EcoPoints © 2025
             </span>

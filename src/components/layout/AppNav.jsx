@@ -36,26 +36,11 @@ export default function AppNav() {
         {/* Left: Logo & Links */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-            {/* Inline SVG Recycle/Circle Icon */}
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                border: '1px solid var(--color-ink)',
-                background: 'var(--color-primary)',
-                color: 'var(--color-paper)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square">
-                <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" />
-                <path d="M11 19h8.2a1.8 1.8 0 0 0 1.583-.914.79.79 0 0 0-.017-.792l-3.21-5.694" />
-                <path d="M14.5 4.5 12 9l-2.5-4.5" />
-                <path d="M3.5 12h5" />
-              </svg>
-            </div>
+            <img
+              src="/logo.png"
+              alt="EcoPoints Logo"
+              style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+            />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span
                 style={{

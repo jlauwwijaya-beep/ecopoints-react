@@ -30,9 +30,11 @@ export default function Navbar() {
       >
         {/* Logo */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="ep-logo-box">
-            EP
-          </div>
+          <img
+            src="/logo.png"
+            alt="EcoPoints Logo"
+            style={{ width: '34px', height: '34px', objectFit: 'contain' }}
+          />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span
               style={{
