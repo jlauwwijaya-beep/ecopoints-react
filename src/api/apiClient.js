@@ -138,7 +138,7 @@ export const pointApi = {
 export const adminApi = {
   // Deposit management
   updateDepositStatus: (id, status, notes, weightKg) =>
-    request(`/waste-deposits/${id}/status`, {
+    request(`/waste-deposits/${id}/${status === 'verified' ? 'verify' : 'reject'}`, {
       method: 'PUT',
       body: JSON.stringify({ status, notes, ...(weightKg ? { weight_kg: Number(weightKg) } : {}) })
     }),
