@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import Button from '../components/ui/Button';
 import CategoryDot from '../components/ui/CategoryDot';
+import { masterApi } from '../api/apiClient';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -11,6 +12,24 @@ export default function LandingPage() {
   // Interactive Scale Simulator State
   const [weight, setWeight] = useState(4.5);
   const [category, setCategory] = useState('plastik'); // 'plastik' | 'kertas' | 'organik'
+  const [statistics, setStatistics] = useState({
+    totalWeightKg: 0,
+    totalPointsIssued: 0,
+    activeDropPoints: 0
+  });
+
+  useEffect(() => {
+    let active = true;
+    masterApi.getStatistics().then(result => {
+      if (!active || !result.success || !result.data) return;
+      setStatistics({
+        totalWeightKg: Number(result.data.total_weight_kg || 0),
+        totalPointsIssued: Number(result.data.total_points_issued || 0),
+        activeDropPoints: Number(result.data.active_drop_points || 0)
+      });
+    });
+    return () => { active = false; };
+  }, []);
 
   const rates = {
     plastik: { label: 'Plastik (PET/HDPE)', rate: 300, unit: 'pts/kg' },
@@ -122,7 +141,7 @@ export default function LandingPage() {
               >
                 <div>
                   <div className="font-mono tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                    18.4+ Ton
+                    {(statistics.totalWeightKg / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} Ton
                   </div>
                   <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', textTransform: 'uppercase' }}>
                     Sampah Terkelola
@@ -131,7 +150,7 @@ export default function LandingPage() {
                 <div style={{ width: 1, height: 32, background: 'var(--color-border)' }} />
                 <div>
                   <div className="font-mono tabular-nums text-poin" style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                    4.2 Miliar
+                    {statistics.totalPointsIssued.toLocaleString('id-ID')}
                   </div>
                   <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', textTransform: 'uppercase' }}>
                     Poin Diberikan
@@ -140,7 +159,7 @@ export default function LandingPage() {
                 <div style={{ width: 1, height: 32, background: 'var(--color-border)' }} />
                 <div>
                   <div className="font-mono tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                    124 Unit
+                    {statistics.activeDropPoints} Unit
                   </div>
                   <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', textTransform: 'uppercase' }}>
                     Drop Point Aktif

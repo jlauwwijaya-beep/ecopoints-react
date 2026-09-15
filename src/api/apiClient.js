@@ -101,7 +101,8 @@ export const authApi = {
 export const masterApi = {
   getWasteTypes: () => request('/waste-types'),
   getDropPoints: () => request('/drop-points'),
-  getLeaderboard: () => request('/leaderboard')
+  getLeaderboard: () => request('/leaderboard'),
+  getStatistics: () => request('/statistics')
 };
 
 // Waste Deposits
