@@ -140,6 +140,10 @@ export default function AdminManagementPage({ section = "overview" }) {
   const { pathname } = useLocation();
   const [data, setData] = useState([]);
   const [report, setReport] = useState(null);
+  const [usersMap, setUsersMap] = useState({});
+  const [rewardsMap, setRewardsMap] = useState({});
+  const [redemptionFilter, setRedemptionFilter] = useState("all");
+  const [redemptionSearch, setRedemptionSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(null);
@@ -163,7 +167,31 @@ export default function AdminManagementPage({ section = "overview" }) {
     let result;
     if (section === "points") result = await masterApi.getWasteTypes();
     if (section === "rewards") result = await rewardApi.getAll();
-    if (section === "redemptions") result = await adminApi.getRedemptions();
+    if (section === "redemptions") {
+      const [redemptionRes, rewardsRes, usersRes] = await Promise.all([
+        adminApi.getRedemptions(),
+        rewardApi.getAll().catch(() => null),
+        adminApi.getUsers().catch(() => null),
+      ]);
+
+      if (rewardsRes?.success && Array.isArray(rewardsRes.data)) {
+        const rMap = {};
+        rewardsRes.data.forEach((r) => {
+          rMap[r.id] = r;
+        });
+        setRewardsMap(rMap);
+      }
+
+      if (usersRes?.success && Array.isArray(usersRes.data)) {
+        const uMap = {};
+        usersRes.data.forEach((u) => {
+          uMap[u.id] = u;
+        });
+        setUsersMap(uMap);
+      }
+
+      result = redemptionRes;
+    }
     if (section === "reports" || section === "overview")
       result = await adminApi.getReportsSummary();
     if (result?.success) {
@@ -308,6 +336,72 @@ export default function AdminManagementPage({ section = "overview" }) {
     else load();
     setStatusLoading(null);
   };
+
+  const getCustomerName = (item) => {
+    return (
+      item.user_name ||
+      item.userName ||
+      usersMap[item.user_id]?.name ||
+      item.user?.name ||
+      (item.user_id ? `Nasabah #${item.user_id}` : "-")
+    );
+  };
+
+  const getCustomerEmail = (item) => {
+    return (
+      item.user_email ||
+      item.userEmail ||
+      usersMap[item.user_id]?.email ||
+      item.user?.email ||
+      ""
+    );
+  };
+
+  const getRewardName = (item) => {
+    return (
+      item.reward_name ||
+      item.rewardName ||
+      rewardsMap[item.reward_id]?.name ||
+      item.reward?.name ||
+      (item.reward_id ? `Hadiah #${item.reward_id}` : "-")
+    );
+  };
+
+  const getRewardCategory = (item) => {
+    return (
+      item.reward?.category ||
+      rewardsMap[item.reward_id]?.category ||
+      "Hadiah"
+    );
+  };
+
+  const filteredRedemptions = data.filter((item) => {
+    if (redemptionFilter !== "all") {
+      if (redemptionFilter === "completed") {
+        if (item.status !== "completed" && item.status !== "verified") return false;
+      } else if (redemptionFilter === "cancelled") {
+        if (item.status !== "cancelled" && item.status !== "rejected") return false;
+      } else if (item.status !== redemptionFilter) {
+        return false;
+      }
+    }
+    if (redemptionSearch.trim()) {
+      const q = redemptionSearch.toLowerCase();
+      const uName = getCustomerName(item).toLowerCase();
+      const uEmail = getCustomerEmail(item).toLowerCase();
+      const rName = getRewardName(item).toLowerCase();
+      const idStr = String(item.id);
+      const paddedId = String(item.id).padStart(4, "0");
+      return (
+        uName.includes(q) ||
+        uEmail.includes(q) ||
+        rName.includes(q) ||
+        idStr.includes(q) ||
+        paddedId.includes(q)
+      );
+    }
+    return true;
+  });
 
   const meta = sectionMeta[section] || sectionMeta.overview;
   return (
@@ -651,77 +745,386 @@ export default function AdminManagementPage({ section = "overview" }) {
         )}
 
         {section === "redemptions" && (
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nasabah</th>
-                  <th>Hadiah</th>
-                  <th>Poin</th>
-                  <th>Tanggal</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
+          <div>
+            {/* Filter & Search Toolbar */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "1rem",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1.25rem",
+              }}
+            >
+              {/* Status Filter Tabs */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                {[
+                  { key: "all", label: "Semua", count: data.length },
+                  {
+                    key: "pending",
+                    label: "Menunggu",
+                    count: data.filter((d) => d.status === "pending").length,
+                  },
+                  {
+                    key: "completed",
+                    label: "Selesai",
+                    count: data.filter(
+                      (d) => d.status === "completed" || d.status === "verified",
+                    ).length,
+                  },
+                  {
+                    key: "cancelled",
+                    label: "Dibatalkan",
+                    count: data.filter(
+                      (d) => d.status === "cancelled" || d.status === "rejected",
+                    ).length,
+                  },
+                ].map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setRedemptionFilter(f.key)}
+                    className="btn btn-sm"
+                    style={{
+                      background:
+                        redemptionFilter === f.key
+                          ? "var(--color-ink)"
+                          : "var(--color-surface)",
+                      color:
+                        redemptionFilter === f.key
+                          ? "var(--color-paper)"
+                          : "var(--color-ink-muted)",
+                      border:
+                        redemptionFilter === f.key
+                          ? "1px solid var(--color-ink)"
+                          : "1px solid var(--color-border)",
+                      transition: "all 0.15s ease",
+                      fontWeight: redemptionFilter === f.key ? 700 : 500,
+                    }}
+                  >
+                    {f.label} ({f.count})
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Box */}
+              <div
+                style={{
+                  position: "relative",
+                  minWidth: "260px",
+                  maxWidth: "360px",
+                  flex: "1 1 auto",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Cari ID, nasabah, hadiah..."
+                  value={redemptionSearch}
+                  onChange={(e) => setRedemptionSearch(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.55rem 2rem 0.55rem 0.75rem",
+                    fontSize: "0.85rem",
+                    border: "1px solid var(--color-border)",
+                    backgroundColor: "#fff",
+                    borderRadius: "4px",
+                  }}
+                />
+                {redemptionSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setRedemptionSearch("")}
+                    style={{
+                      position: "absolute",
+                      right: "0.5rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      padding: "0.2rem 0.4rem",
+                      fontSize: "0.8rem",
+                      color: "var(--color-ink-faint)",
+                      fontWeight: 700,
+                    }}
+                    title="Hapus pencarian"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Redemptions Table */}
+            <div className="data-table-container">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan="7">Memuat data...</td>
+                    <th style={{ width: "95px" }}>ID</th>
+                    <th>Nasabah</th>
+                    <th>Hadiah</th>
+                    <th style={{ width: "120px" }}>Poin</th>
+                    <th style={{ width: "130px" }}>Tanggal</th>
+                    <th style={{ width: "120px" }}>Status</th>
+                    <th style={{ width: "160px" }}>Aksi</th>
                   </tr>
-                ) : (
-                  data.map((item) => (
-                    <tr key={item.id}>
-                      <td>#{item.id}</td>
-                      <td>{item.user?.name || `User #${item.user_id}`}</td>
-                      <td>
-                        {item.reward?.name || `Reward #${item.reward_id}`}
-                      </td>
-                      <td>{item.points_used}</td>
-                      <td>{formatDate(item.created_at)}</td>
-                      <td>
-                        <span
-                          className={`badge ${item.status === "completed" ? "badge-verified" : item.status === "cancelled" ? "badge-rejected" : "badge-pending"}`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td>
-                        {item.status === "pending" && (
-                          <>
-                            <button
-                              className="btn btn-sm btn-primary"
-                              disabled={statusLoading === item.id}
-                              onClick={() =>
-                                updateRedemption(item, "completed")
-                              }
-                            >
-                              Selesaikan
-                            </button>{" "}
-                            <button
-                              className="btn btn-sm btn-danger"
-                              disabled={statusLoading === item.id}
-                              onClick={() =>
-                                updateRedemption(item, "cancelled")
-                              }
-                            >
-                              Batalkan
-                            </button>
-                          </>
-                        )}
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: "center", padding: "2.5rem" }}>
+                        <div className="font-mono text-faint">Memuat data penukaran...</div>
                       </td>
                     </tr>
-                  ))
-                )}
-                {!loading && !data.length && (
-                  <tr>
-                    <td colSpan="7" className="text-faint">
-                      Belum ada penukaran.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredRedemptions.map((item) => {
+                      const custName = getCustomerName(item);
+                      const custEmail = getCustomerEmail(item);
+                      const rewName = getRewardName(item);
+                      const rewCategory = getRewardCategory(item);
+                      const custInitial = (custName.replace(/^Nasabah #/, "N") || "U")
+                        .charAt(0)
+                        .toUpperCase();
+
+                      return (
+                        <tr key={item.id}>
+                          {/* ID Cantik */}
+                          <td>
+                            <span
+                              className="font-mono"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.2rem",
+                                fontSize: "0.8125rem",
+                                fontWeight: 700,
+                                background: "#fff",
+                                border: "1px solid var(--color-border)",
+                                padding: "0.25rem 0.55rem",
+                                borderRadius: "4px",
+                                color: "var(--color-ink)",
+                                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+                                letterSpacing: "0.02em",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color: "var(--color-primary)",
+                                  fontWeight: 800,
+                                }}
+                              >
+                                #
+                              </span>
+                              <span>{String(item.id).padStart(4, "0")}</span>
+                            </span>
+                          </td>
+
+                          {/* Nama Nasabah */}
+                          <td>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.65rem",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: "50%",
+                                  background: "var(--color-primary)",
+                                  color: "#fff",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "0.78rem",
+                                  fontWeight: 700,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {custInitial}
+                              </div>
+                              <div>
+                                <div
+                                  style={{
+                                    fontWeight: 600,
+                                    color: "var(--color-ink)",
+                                    fontSize: "0.875rem",
+                                  }}
+                                >
+                                  {custName}
+                                </div>
+                                <div
+                                  className="text-faint font-mono"
+                                  style={{ fontSize: "0.72rem" }}
+                                >
+                                  {custEmail || (item.user_id ? `ID Nasabah: ${item.user_id}` : "")}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Nama Hadiah */}
+                          <td>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.65rem",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: "6px",
+                                  background: "var(--color-poin-light)",
+                                  border: "1px solid #E3CE74",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "1rem",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                🎁
+                              </div>
+                              <div>
+                                <div
+                                  style={{
+                                    fontWeight: 600,
+                                    color: "var(--color-ink)",
+                                    fontSize: "0.875rem",
+                                  }}
+                                >
+                                  {rewName}
+                                </div>
+                                <div
+                                  className="text-faint"
+                                  style={{
+                                    fontSize: "0.72rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.35rem",
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  <span>{rewCategory}</span>
+                                  {item.voucher_code && (
+                                    <span
+                                      className="font-mono"
+                                      style={{
+                                        color: "var(--color-primary)",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      • Kode: {item.voucher_code}
+                                    </span>
+                                  )}
+                                  {item.notes && (
+                                    <span style={{ fontStyle: "italic" }}>
+                                      • "{item.notes}"
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Poin Digunakan */}
+                          <td
+                            className="font-mono"
+                            style={{
+                              fontWeight: 700,
+                              color: "var(--color-primary)",
+                            }}
+                          >
+                            {Number(item.points_used || 0).toLocaleString("id-ID")}{" "}
+                            <span
+                              style={{
+                                fontSize: "0.72rem",
+                                fontWeight: 500,
+                                color: "var(--color-ink-muted)",
+                              }}
+                            >
+                              pts
+                            </span>
+                          </td>
+
+                          {/* Tanggal */}
+                          <td
+                            style={{
+                              fontSize: "0.8125rem",
+                              color: "var(--color-ink-muted)",
+                            }}
+                          >
+                            {formatDate(item.created_at)}
+                          </td>
+
+                          {/* Status */}
+                          <td>
+                            <span
+                              className={`badge ${
+                                item.status === "completed" || item.status === "verified"
+                                  ? "badge-verified"
+                                  : item.status === "cancelled" || item.status === "rejected"
+                                    ? "badge-rejected"
+                                    : "badge-pending"
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          </td>
+
+                          {/* Aksi */}
+                          <td>
+                            {item.status === "pending" ? (
+                              <div style={{ display: "flex", gap: "0.35rem" }}>
+                                <button
+                                  className="btn btn-sm btn-primary"
+                                  disabled={statusLoading === item.id}
+                                  onClick={() => updateRedemption(item, "completed")}
+                                >
+                                  {statusLoading === item.id ? "..." : "Selesaikan"}
+                                </button>{" "}
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  disabled={statusLoading === item.id}
+                                  onClick={() => updateRedemption(item, "cancelled")}
+                                >
+                                  {statusLoading === item.id ? "..." : "Batalkan"}
+                                </button>
+                              </div>
+                            ) : (
+                              <span
+                                className="text-faint font-mono"
+                                style={{ fontSize: "0.75rem" }}
+                              >
+                                -
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                  {!loading && !filteredRedemptions.length && (
+                    <tr>
+                      <td colSpan="7" className="text-faint" style={{ textAlign: "center", padding: "2rem" }}>
+                        {redemptionSearch || redemptionFilter !== "all"
+                          ? "Tidak ada penukaran yang cocok dengan filter atau pencarian."
+                          : "Belum ada penukaran."}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>
