@@ -1,0 +1,21 @@
+# ==========================================
+# EcoPoints React - Docker Compose Gacor
+# Created for: Acong
+# ==========================================
+
+services:
+  ecopoints-react:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecopoints-react-acong
+    restart: always
+    ports:
+      - "9082:9082"
+    environment:
+      - NODE_ENV=production
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
