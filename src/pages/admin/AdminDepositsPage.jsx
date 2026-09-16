@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { depositApi, adminApi } from '../../api/apiClient';
 import AdminNav from '../../components/layout/AdminNav';
 
@@ -482,18 +483,38 @@ export default function AdminDepositsPage() {
         )}
 
         {/* Verification / Rejection Modal */}
-        {modal && (
+        {modal && typeof document !== 'undefined' && createPortal(
           <div style={{
-            position: 'fixed', inset: 0, zIndex: 100,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '1rem'
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            overflowY: 'auto'
           }}
           onClick={() => setModal(null)}
           >
             <div
               className="card fade-in"
-              style={{ maxWidth: 540, width: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'var(--color-paper)' }}
+              style={{
+                maxWidth: 540,
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                background: 'var(--color-paper)',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                border: '1px solid var(--color-border)',
+                margin: 'auto'
+              }}
               onClick={e => e.stopPropagation()}
             >
               <div className="card-header">
@@ -623,7 +644,8 @@ export default function AdminDepositsPage() {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </main>
     </>
