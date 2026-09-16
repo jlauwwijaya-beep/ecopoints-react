@@ -46,24 +46,41 @@ function formatDate(value) {
 function buildReportFallback(deposits, transactions) {
   const verified = deposits.filter((item) => item.status === "verified");
   const byType = verified.reduce((groups, item) => {
-    const id = item.waste_type?.id || item.waste_type_id || "unknown";
-    const current = groups[id] || {
-      waste_type_id: id,
-      waste_type_name: item.waste_type?.name || "Jenis sampah",
-      total_weight_kg: 0,
-      total_deposits: 0,
-      total_points: 0,
-    };
-    current.total_weight_kg += Number(item.weight_kg || 0);
-    current.total_deposits += 1;
-    current.total_points += Number(item.points_earned || 0);
-    groups[id] = current;
+    if (Array.isArray(item.items) && item.items.length > 0) {
+      item.items.forEach((it) => {
+        const id = it.waste_type_id || it.waste_type?.id || "unknown";
+        const current = groups[id] || {
+          waste_type_id: id,
+          waste_type_name: it.waste_type_name || it.waste_type?.name || "Jenis sampah",
+          total_weight_kg: 0,
+          total_deposits: 0,
+          total_points: 0,
+        };
+        current.total_weight_kg += Number(it.actual_weight_kg || it.weight_kg || 0);
+        current.total_deposits += 1;
+        current.total_points += Number(it.earned_points || it.points_earned || 0);
+        groups[id] = current;
+      });
+    } else {
+      const id = item.waste_type?.id || item.waste_type_id || "unknown";
+      const current = groups[id] || {
+        waste_type_id: id,
+        waste_type_name: item.waste_type?.name || item.waste_type_name || "Jenis sampah",
+        total_weight_kg: 0,
+        total_deposits: 0,
+        total_points: 0,
+      };
+      current.total_weight_kg += Number(item.total_weight_kg || item.weight_kg || 0);
+      current.total_deposits += 1;
+      current.total_points += Number(item.earned_points || item.points_earned || 0);
+      groups[id] = current;
+    }
     return groups;
   }, {});
 
   return {
     total_weight_kg: verified.reduce(
-      (total, item) => total + Number(item.weight_kg || 0),
+      (total, item) => total + Number(item.total_weight_kg || item.weight_kg || 0),
       0,
     ),
     total_users: 0,

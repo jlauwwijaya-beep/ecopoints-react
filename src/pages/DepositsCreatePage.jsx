@@ -12,16 +12,7 @@ export default function DepositsCreatePage() {
   const navigate = useNavigate();
   const { addDeposit, wasteTypes, dropPoints, apiConnected } = useAuth();
 
-  const [category, setCategory] = useState('anorganik');
-  const [selectedWasteType, setSelectedWasteType] = useState(null); // { id, name, points_per_kg }
-  const [selectedDropPoint, setSelectedDropPoint] = useState(null); // { id, name }
-  const [weight, setWeight] = useState(3.5);
-  const [notes, setNotes] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedDeposit, setSubmittedDeposit] = useState(null);
-
-  // Category classification for API waste types
+  // Helper to categorize waste types
   const classifyCategory = (name) => {
     const lower = (name || '').toLowerCase();
     if (lower.includes('organik') || lower.includes('kompos') || lower.includes('jelantah')) return 'organik';
@@ -29,68 +20,164 @@ export default function DepositsCreatePage() {
     return 'anorganik';
   };
 
-  // Static fallback category rates (used when API is offline)
-  const fallbackRates = {
+  // Fallback rates
+  const fallbackRates = useMemo(() => ({
     organik: { rate: 50, items: ['Kompos & Sisa Sayur Dapur Organik', 'Kulit Buah & Ampas Kopi/Teh', 'Dedaunan Kering'] },
     anorganik: { rate: 300, items: ['Plastik PET (Botol Bening Bersih)', 'Kardus & Kertas Dupleks', 'Kaleng Alumunium & Seng'] },
     b3: { rate: 800, items: ['Baterai Kering Bekas', 'E-Waste (Kabel, Charger Rusak, PCB)'] }
-  };
+  }), []);
 
-  // Filtered waste types from API based on selected category
-  const filteredWasteTypes = useMemo(() => {
+  // Filter available waste types by category
+  const getCategoryWasteTypes = (cat) => {
     if (wasteTypes && wasteTypes.length > 0) {
-      const seenNames = new Set();
-      return wasteTypes.filter((wt) => {
-        if (classifyCategory(wt.name) !== category || wt.is_active === false) return false;
-        const normalizedName = (wt.name || '').trim().toLowerCase();
-        if (seenNames.has(normalizedName)) return false;
-        seenNames.add(normalizedName);
-        return true;
-      });
+      return wasteTypes.filter(wt => classifyCategory(wt.name) === cat && wt.is_active !== false);
     }
     return [];
-  }, [wasteTypes, category]);
+  };
 
-  const currentPointsPerKg = selectedWasteType
-    ? selectedWasteType.points_per_kg
-    : (filteredWasteTypes[0]?.points_per_kg || fallbackRates[category]?.rate || 300);
+  // Default initial item
+  const createDefaultItem = (tempId, cat = 'anorganik') => {
+    const list = getCategoryWasteTypes(cat);
+    const firstType = list[0];
+    return {
+      tempId,
+      category: cat,
+      wasteTypeId: firstType ? firstType.id : null,
+      wasteTypeName: firstType ? firstType.name : (fallbackRates[cat]?.items[0] || 'Sampah'),
+      pointsPerKg: firstType ? firstType.points_per_kg : (fallbackRates[cat]?.rate || 300),
+      weight: 1.0,
+    };
+  };
 
-  const currentWasteTypeName = selectedWasteType?.name || filteredWasteTypes[0]?.name || fallbackRates[category]?.items[0] || 'Sampah Terpilah';
+  const [items, setItems] = useState([
+    {
+      tempId: 1,
+      category: 'anorganik',
+      wasteTypeId: null,
+      wasteTypeName: '',
+      pointsPerKg: 300,
+      weight: 1.0,
+    }
+  ]);
+
+  // Synchronize initial item with loaded waste types once available
+  React.useEffect(() => {
+    if (wasteTypes && wasteTypes.length > 0) {
+      setItems(prevItems => prevItems.map(item => {
+        if (item.wasteTypeId) return item;
+        const list = getCategoryWasteTypes(item.category);
+        const firstType = list[0] || wasteTypes[0];
+        return {
+          ...item,
+          wasteTypeId: firstType.id,
+          wasteTypeName: firstType.name,
+          pointsPerKg: firstType.points_per_kg
+        };
+      }));
+    }
+  }, [wasteTypes]);
+
+  const [selectedDropPoint, setSelectedDropPoint] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedDeposit, setSubmittedDeposit] = useState(null);
+
+  // Calculations
+  const totalWeight = useMemo(() => {
+    return items.reduce((sum, it) => sum + (parseFloat(it.weight) || 0), 0);
+  }, [items]);
+
+  const totalEstimatedPoints = useMemo(() => {
+    return items.reduce((sum, it) => {
+      const w = parseFloat(it.weight) || 0;
+      const rate = Number(it.pointsPerKg) || 0;
+      return sum + Math.floor(w * rate);
+    }, 0);
+  }, [items]);
+
   const currentLocation = selectedDropPoint?.name || dropPoints[0]?.name || 'Drop Point EcoPoints Pusat';
-
-  const estimatedPoints = Math.floor(weight * currentPointsPerKg);
-  const draftId = `DRAFT-DEP-${Math.floor(100 + Math.random() * 900)}`;
-
   const qrValue = submittedDeposit?.rawId ? String(submittedDeposit.rawId) : '';
 
-  const handleCategoryChange = (newCat) => {
-    setCategory(newCat);
-    setSelectedWasteType(null); // reset when category changes
+  // Item handlers
+  const handleAddItem = () => {
+    const nextId = items.length > 0 ? Math.max(...items.map(it => it.tempId)) + 1 : 1;
+    setItems(prev => [...prev, createDefaultItem(nextId, 'anorganik')]);
+  };
+
+  const handleRemoveItem = (tempId) => {
+    if (items.length <= 1) return;
+    setItems(prev => prev.filter(it => it.tempId !== tempId));
+  };
+
+  const handleItemCategoryChange = (tempId, newCat) => {
+    const list = getCategoryWasteTypes(newCat);
+    const firstType = list[0];
+    setItems(prev => prev.map(it => {
+      if (it.tempId !== tempId) return it;
+      return {
+        ...it,
+        category: newCat,
+        wasteTypeId: firstType ? firstType.id : null,
+        wasteTypeName: firstType ? firstType.name : (fallbackRates[newCat]?.items[0] || 'Sampah'),
+        pointsPerKg: firstType ? firstType.points_per_kg : (fallbackRates[newCat]?.rate || 300)
+      };
+    }));
+  };
+
+  const handleItemWasteTypeChange = (tempId, wasteTypeId) => {
+    const found = wasteTypes?.find(wt => String(wt.id) === String(wasteTypeId));
+    setItems(prev => prev.map(it => {
+      if (it.tempId !== tempId) return it;
+      return {
+        ...it,
+        wasteTypeId: found ? found.id : null,
+        wasteTypeName: found ? found.name : it.wasteTypeName,
+        pointsPerKg: found ? found.points_per_kg : it.pointsPerKg
+      };
+    }));
+  };
+
+  const handleItemWeightChange = (tempId, val) => {
+    const weightVal = Math.max(0.1, parseFloat(val) || 0.1);
+    setItems(prev => prev.map(it => it.tempId === tempId ? { ...it, weight: weightVal } : it));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (items.length === 0) return;
     setIsSubmitting(true);
 
-    const activeWasteType = selectedWasteType || filteredWasteTypes[0];
-    const wasteTypeId = activeWasteType?.id || null;
-    const wasteTypeName = activeWasteType?.name || fallbackRates[category]?.items[0] || 'Sampah Terpilah';
     const dropPointId = selectedDropPoint?.id || (dropPoints[0]?.id || null);
     const dropPointName = selectedDropPoint?.name || (dropPoints[0]?.name || 'Drop Point EcoPoints Pusat');
 
-    const result = await addDeposit({
-      category,
-      type: wasteTypeName,
-      waste_type_id: wasteTypeId,
+    const depositPayload = {
+      category: items[0].category,
+      type: items.length > 1 ? `${items[0].wasteTypeName} (+${items.length - 1} jenis lain)` : items[0].wasteTypeName,
       drop_point_id: dropPointId,
       location: dropPointName,
-      weight,
-      points: estimatedPoints,
-      notes
-    });
+      weight: totalWeight,
+      points: totalEstimatedPoints,
+      notes,
+      items: items.map(it => ({
+        waste_type_id: it.wasteTypeId || 1,
+        waste_type_name: it.wasteTypeName,
+        weight_kg: it.weight,
+        points_per_kg: it.pointsPerKg
+      }))
+    };
 
+    const result = await addDeposit(depositPayload);
     const item = result?.data || result;
-    setSubmittedDeposit(item);
+    setSubmittedDeposit({
+      ...item,
+      items: item?.items?.length ? item.items : items.map(it => ({
+        waste_type_name: it.wasteTypeName,
+        weight_kg: it.weight,
+        points_per_kg: it.pointsPerKg,
+        points_earned: Math.floor(it.weight * it.pointsPerKg)
+      }))
+    });
     setIsSubmitting(false);
     setIsSubmitted(true);
   };
@@ -100,7 +187,7 @@ export default function DepositsCreatePage() {
       <AppNav />
 
       <main style={{ padding: '2.5rem 0 4rem', flexGrow: 1, backgroundColor: 'var(--color-paper)' }}>
-        <div className="container" style={{ maxWidth: '64rem' }}>
+        <div className="container" style={{ maxWidth: '68rem' }}>
           {/* Header */}
           <div
             style={{
@@ -115,14 +202,14 @@ export default function DepositsCreatePage() {
           >
             <div>
               <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                FORMULIR PENYETORAN
+                FORMULIR PENYETORAN MULTI-ITEM
               </div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>
                 Input Setoran Sampah Baru
               </h1>
             </div>
             <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
-              Standard Digital Timbangan
+              Standard Digital Timbangan • 1 Transaksi Banyak Sampah
             </span>
           </div>
 
@@ -130,7 +217,7 @@ export default function DepositsCreatePage() {
             /* Success Receipt Modal / Card */
             <div
               style={{
-                maxWidth: '32rem',
+                maxWidth: '36rem',
                 margin: '2rem auto',
                 backgroundColor: 'var(--color-surface)',
                 border: '2px solid var(--color-ink)',
@@ -141,8 +228,8 @@ export default function DepositsCreatePage() {
               <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                 <div
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 48,
+                    height: 48,
                     borderRadius: '50%',
                     background: 'var(--color-primary-light)',
                     color: 'var(--color-organik)',
@@ -159,7 +246,7 @@ export default function DepositsCreatePage() {
                 </div>
                 <h2 style={{ fontSize: '1.375rem', fontWeight: 800 }}>Setoran Berhasil Diajukan</h2>
                 <p className="font-mono text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                  Nota tanda terima siap diverifikasi petugas drop point
+                  Nota digital siap diverifikasi dan ditimbang petugas drop point
                 </p>
               </div>
 
@@ -171,15 +258,27 @@ export default function DepositsCreatePage() {
                 </div>
 
                 <ReceiptRow label="WAKTU INPUT" value={submittedDeposit?.date} />
-                <ReceiptRow label="KATEGORI" value={submittedDeposit?.category.toUpperCase()} />
-                <ReceiptRow label="JENIS SAMPAH" value={submittedDeposit?.type} />
-                <ReceiptRow label="BERAT TERUKUR" value={`${submittedDeposit?.weight} KG`} />
                 <ReceiptRow label="LOKASI" value={submittedDeposit?.location} />
                 <ReceiptRow label="STATUS" value="MENUNGGU VALIDASI" />
 
+                <div style={{ borderTop: '1px dashed var(--color-border)', margin: '0.75rem 0', paddingTop: '0.75rem' }}>
+                  <div className="font-mono text-faint" style={{ fontSize: '0.7rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                    RINCIAN ITEM ({submittedDeposit?.items?.length || 1} JENIS):
+                  </div>
+                  {(submittedDeposit?.items || []).map((it, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.35rem' }}>
+                      <span>{idx + 1}. {it.waste_type_name || it.waste_type?.name || 'Sampah'} ({Number(it.weight_kg || it.weight || 0).toFixed(1)} kg)</span>
+                      <span className="font-mono text-poin" style={{ fontWeight: 600 }}>
+                        +{((it.points_earned || it.earned_points || (Number(it.weight_kg || 0) * (it.points_per_kg || 300)))).toLocaleString('id-ID')} pts
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <ReceiptRow label="TOTAL BERAT" value={`${submittedDeposit?.weight} KG`} />
                 <ReceiptRow
-                  label="ESTIMASI POIN"
-                  value={`+${submittedDeposit?.points.toLocaleString('id-ID')}`}
+                  label="TOTAL ESTIMASI POIN"
+                  value={`+${submittedDeposit?.points?.toLocaleString('id-ID')}`}
                   unit="PTS"
                   isTotal={true}
                   highlight={true}
@@ -204,6 +303,7 @@ export default function DepositsCreatePage() {
                   onClick={() => {
                     setIsSubmitted(false);
                     setSubmittedDeposit(null);
+                    setItems([createDefaultItem(1, 'anorganik')]);
                   }}
                   style={{ flex: 1 }}
                 >
@@ -220,12 +320,12 @@ export default function DepositsCreatePage() {
               </div>
             </div>
           ) : (
-            /* Main Form Grid (2 Columns: Form Left, Digital Scale & Receipt Right) */
+            /* Main Form Grid (2 Columns: Multi-Item Form Left, HUD & Summary Right) */
             <div
               className="deposit-form-layout"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                gridTemplateColumns: 'minmax(0, 1.25fr) minmax(0, 1fr)',
                 gap: '2rem',
                 alignItems: 'start'
               }}
@@ -239,141 +339,179 @@ export default function DepositsCreatePage() {
                 }}
               >
                 <form onSubmit={handleSubmit}>
-                  {/* Category Selection */}
-                  <div className="form-group">
-                    <label className="form-label">
-                      1. Kategori Sampah
-                    </label>
-                    <div className="deposit-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                      {[
-                        { id: 'organik', label: 'Organik', color: 'organik' },
-                        { id: 'anorganik', label: 'Anorganik', color: 'anorganik' },
-                        { id: 'b3', label: 'B3 / E-Waste', color: 'b3' }
-                      ].map((cat) => {
-                        const isSelected = category === cat.id;
-                        // Get rate to display from API or fallback
-                        const catWasteTypes = wasteTypes?.filter(wt => classifyCategory(wt.name) === cat.id) || [];
-                        const displayRate = catWasteTypes.length > 0
-                          ? Math.round(catWasteTypes.reduce((sum, wt) => sum + wt.points_per_kg, 0) / catWasteTypes.length)
-                          : fallbackRates[cat.id]?.rate || 300;
-                        return (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => handleCategoryChange(cat.id)}
-                            style={{
-                              padding: '0.625rem 0.5rem',
-                              border: isSelected ? '2px solid var(--color-ink)' : '1px solid var(--color-border)',
-                              backgroundColor: isSelected ? 'var(--color-ink)' : 'var(--color-paper)',
-                              color: isSelected ? 'var(--color-paper)' : 'var(--color-ink)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <CategoryDot type={cat.color} size={8} />
-                            <span className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
-                              {cat.label}
-                            </span>
-                            <span
-                              className="font-mono"
-                              style={{
-                                fontSize: '0.625rem',
-                                color: isSelected ? 'var(--color-poin-light)' : 'var(--color-ink-muted)'
-                              }}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 800 }}>Daftar Sampah yang Disetor</h2>
+                    <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
+                      {items.length} Jenis Sampah
+                    </span>
+                  </div>
+
+                  {/* Multi-Item Card List */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                    {items.map((item, index) => {
+                      const catWasteTypes = getCategoryWasteTypes(item.category);
+                      return (
+                        <div
+                          key={item.tempId}
+                          style={{
+                            border: '1px solid var(--color-border)',
+                            backgroundColor: 'var(--color-paper)',
+                            padding: '1.25rem',
+                            position: 'relative'
+                          }}
+                        >
+                          {/* Item Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span
+                                style={{
+                                  background: 'var(--color-ink)',
+                                  color: 'var(--color-paper)',
+                                  fontSize: '0.6875rem',
+                                  fontWeight: 800,
+                                  fontFamily: 'var(--font-mono)',
+                                  padding: '0.15rem 0.45rem'
+                                }}
+                              >
+                                #{index + 1}
+                              </span>
+                              <strong style={{ fontSize: '0.9rem' }}>
+                                {item.wasteTypeName || 'Pilih Sampah'}
+                              </strong>
+                            </div>
+
+                            {items.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(item.tempId)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#dc2626',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Category Selection for this Item */}
+                          <div className="form-group" style={{ marginBottom: '0.85rem' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Kategori Sampah</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
+                              {[
+                                { id: 'organik', label: 'Organik', color: 'organik' },
+                                { id: 'anorganik', label: 'Anorganik', color: 'anorganik' },
+                                { id: 'b3', label: 'B3 / E-Waste', color: 'b3' }
+                              ].map((cat) => {
+                                const isSelected = item.category === cat.id;
+                                return (
+                                  <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => handleItemCategoryChange(item.tempId, cat.id)}
+                                    style={{
+                                      padding: '0.45rem 0.35rem',
+                                      border: isSelected ? '2px solid var(--color-ink)' : '1px solid var(--color-border)',
+                                      backgroundColor: isSelected ? 'var(--color-ink)' : 'var(--color-surface)',
+                                      color: isSelected ? 'var(--color-paper)' : 'var(--color-ink)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '0.35rem',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <CategoryDot type={cat.color} size={6} />
+                                    <span>{cat.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Waste Type Dropdown */}
+                          <div className="form-group" style={{ marginBottom: '0.85rem' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Jenis Sampah</label>
+                            <select
+                              className="form-select"
+                              value={item.wasteTypeId || ''}
+                              onChange={(e) => handleItemWasteTypeChange(item.tempId, e.target.value)}
+                              style={{ fontSize: '0.85rem' }}
                             >
-                              ~{displayRate} pts/kg
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                              {catWasteTypes.length > 0
+                                ? catWasteTypes.map((wt) => (
+                                    <option key={wt.id} value={wt.id}>
+                                      {wt.name} ({wt.points_per_kg} pts/kg)
+                                    </option>
+                                  ))
+                                : (fallbackRates[item.category]?.items || []).map((name, idx) => (
+                                    <option key={idx} value={''}>
+                                      {name}
+                                    </option>
+                                  ))
+                              }
+                            </select>
+                          </div>
+
+                          {/* Weight Slider & Input */}
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                              <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 0 }}>Berat Sampah</label>
+                              <span className="font-mono text-poin" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                                +{Math.floor(item.weight * item.pointsPerKg).toLocaleString('id-ID')} PTS
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0.1"
+                                max="100"
+                                className="form-input font-mono"
+                                value={item.weight}
+                                onChange={(e) => handleItemWeightChange(item.tempId, e.target.value)}
+                                style={{ fontWeight: 700, width: '120px' }}
+                              />
+                              <span className="font-mono text-faint" style={{ fontSize: '0.8rem', fontWeight: 600 }}>KG</span>
+                              <input
+                                type="range"
+                                min="0.1"
+                                max="20.0"
+                                step="0.1"
+                                value={item.weight}
+                                onChange={(e) => handleItemWeightChange(item.tempId, e.target.value)}
+                                style={{ flex: 1 }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  {/* Sub-item dropdown - dynamic from API or fallback */}
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="wasteType">
-                      2. Jenis Spesifik Sampah
-                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>Dari Database</span>}
-                    </label>
-                    <select
-                      id="wasteType"
-                      className="form-select"
-                      value={selectedWasteType?.id || filteredWasteTypes[0]?.id || ''}
-                      onChange={(e) => {
-                        const found = filteredWasteTypes.find(wt => String(wt.id) === String(e.target.value));
-                        setSelectedWasteType(found || null);
-                      }}
+                  {/* Add More Waste Type Button */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={handleAddItem}
+                      className="btn btn-secondary"
+                      style={{ width: '100%', borderStyle: 'dashed', padding: '0.75rem', fontWeight: 700 }}
                     >
-                      {filteredWasteTypes.length > 0
-                        ? filteredWasteTypes.map((wt) => (
-                            <option key={wt.id} value={wt.id}>
-                              {wt.name} ({wt.points_per_kg} pts/kg)
-                            </option>
-                          ))
-                        : fallbackRates[category]?.items.map((item, idx) => (
-                            <option key={idx} value={''}>
-                              {item}
-                            </option>
-                          ))
-                      }
-                    </select>
+                      + Tambah Jenis Sampah Lain
+                    </button>
                   </div>
 
-                  {/* Weight Slider + Input (Digital Scale Style) */}
-                  <div className="form-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                      <label className="form-label" style={{ marginBottom: 0 }}>
-                        3. Berat Sampah (Kilogram)
-                      </label>
-                      <span className="font-mono" style={{ fontSize: '0.875rem', fontWeight: 700 }}>
-                        {weight.toFixed(1)} KG
-                      </span>
-                    </div>
-
-                    <input
-                      type="range"
-                      min="0.2"
-                      max="30.0"
-                      step="0.1"
-                      value={weight}
-                      onChange={(e) => setWeight(parseFloat(e.target.value) || 0.2)}
-                      style={{ width: '100%', marginBottom: '0.75rem' }}
-                    />
-
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0.1"
-                        max="100"
-                        className="form-input font-mono"
-                        value={weight}
-                        onChange={(e) => setWeight(parseFloat(e.target.value) || 0.1)}
-                        style={{ fontWeight: 700 }}
-                      />
-                      <span
-                        className="font-mono"
-                        style={{
-                          padding: '0.625rem 1rem',
-                          background: 'var(--color-paper)',
-                          border: '1px solid var(--color-border)',
-                          fontWeight: 600
-                        }}
-                      >
-                        KG
-                      </span>
-                    </div>
-                    <p className="form-hint">* Dapat disesuaikan kembali oleh timbangan fisik petugas di lokasi.</p>
-                  </div>
-
-                  {/* Location Drop Point - dynamic from API or fallback */}
+                  {/* Drop Point Location */}
                   <div className="form-group">
                     <label className="form-label" htmlFor="location">
-                      4. Lokasi Drop Point Tujuan
-                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>Dari Database</span>}
+                      Lokasi Drop Point Tujuan
+                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>Database Terhubung</span>}
                     </label>
                     <select
                       id="location"
@@ -403,7 +541,7 @@ export default function DepositsCreatePage() {
                   {/* Optional Notes */}
                   <div className="form-group">
                     <label className="form-label" htmlFor="notes">
-                      5. Catatan / Kondisi Barang (Opsional)
+                      Catatan Tambahan (Opsional)
                     </label>
                     <input
                       id="notes"
@@ -411,7 +549,7 @@ export default function DepositsCreatePage() {
                       className="form-input"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Contoh: Sudah dicuci bersih & dipipihkan"
+                      placeholder="Contoh: Plastik sudah dipilah & dibersihkan"
                     />
                   </div>
 
@@ -422,7 +560,7 @@ export default function DepositsCreatePage() {
                     disabled={isSubmitting}
                     style={{ width: '100%', marginTop: '0.5rem', opacity: isSubmitting ? 0.7 : 1 }}
                   >
-                    {isSubmitting ? 'Mengirim...' : 'Konfirmasi & Kirim Setoran'}
+                    {isSubmitting ? 'Mengirim...' : `Kirim Setoran (${items.length} Jenis • ${totalWeight.toFixed(1)} KG)`}
                   </Button>
                 </form>
               </div>
@@ -439,22 +577,22 @@ export default function DepositsCreatePage() {
                 >
                   <div className="scale-hud-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <CategoryDot type={category} pulse={true} size={8} />
-                      <span>SCALE CALIBRATION HUD</span>
+                      <CategoryDot type="anorganik" pulse={true} size={8} />
+                      <span>SCALE CALIBRATION HUD // MULTI-ITEM</span>
                     </div>
                   </div>
 
                   <div className="scale-hud-body">
                     <div className="scale-hud-col">
-                      <div className="scale-hud-label">BERAT TERUKUR</div>
+                      <div className="scale-hud-label">TOTAL BERAT</div>
                       <div className="scale-hud-value tabular-nums">
-                        {weight.toFixed(1)} <span style={{ fontSize: '1rem', fontWeight: 500 }}>KG</span>
+                        {totalWeight.toFixed(1)} <span style={{ fontSize: '1rem', fontWeight: 500 }}>KG</span>
                       </div>
                     </div>
                     <div className="scale-hud-col">
-                      <div className="scale-hud-label">ESTIMASI NILAI</div>
+                      <div className="scale-hud-label">TOTAL ESTIMASI</div>
                       <div className="scale-hud-value tabular-nums text-poin">
-                        +{estimatedPoints.toLocaleString('id-ID')}{' '}
+                        +{totalEstimatedPoints.toLocaleString('id-ID')}{' '}
                         <span style={{ fontSize: '1rem', fontWeight: 500 }}>PTS</span>
                       </div>
                     </div>
@@ -475,19 +613,36 @@ export default function DepositsCreatePage() {
                       PRATINJAU NOTA SETORAN
                     </div>
                     <div className="font-mono text-faint" style={{ fontSize: '0.6875rem' }}>
-                      SISTEM PENIMBANGAN ELEKTRONIK
+                      SISTEM PENIMBANGAN ELEKTRONIK ({items.length} ITEM)
                     </div>
                   </div>
 
-                  <ReceiptRow label="KATEGORI" value={category.toUpperCase()} />
-                  <ReceiptRow label="SUB-ITEM" value={currentWasteTypeName} />
-                  <ReceiptRow label="BERAT BERSIH" value={`${weight.toFixed(1)} KG`} />
-                  <ReceiptRow label="TARIF SATUAN" value={`${currentPointsPerKg} PTS / KG`} />
-                  <ReceiptRow label="LOKASI" value={currentLocation} />
+                  <ReceiptRow label="LOKASI DROP" value={currentLocation} />
+
+                  <div style={{ borderTop: '1px dashed var(--color-border)', margin: '0.75rem 0', paddingTop: '0.75rem' }}>
+                    <div className="font-mono text-faint" style={{ fontSize: '0.7rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                      ITEM DISERAHKAN:
+                    </div>
+                    {items.map((it, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem', fontSize: '0.8rem' }}>
+                        <div>
+                          <span className="font-mono" style={{ fontWeight: 600 }}>{idx + 1}. {it.wasteTypeName}</span>
+                          <span className="text-faint font-mono" style={{ fontSize: '0.7rem', marginLeft: '0.35rem' }}>
+                            ({it.weight.toFixed(1)} kg @ {it.pointsPerKg} pts)
+                          </span>
+                        </div>
+                        <span className="font-mono text-poin" style={{ fontWeight: 700 }}>
+                          +{Math.floor(it.weight * it.pointsPerKg).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <ReceiptRow label="TOTAL BERAT" value={`${totalWeight.toFixed(1)} KG`} />
 
                   <ReceiptRow
                     label="TOTAL ESTIMASI"
-                    value={`+${estimatedPoints.toLocaleString('id-ID')}`}
+                    value={`+${totalEstimatedPoints.toLocaleString('id-ID')}`}
                     unit="PTS"
                     isTotal={true}
                     highlight={true}
@@ -497,7 +652,7 @@ export default function DepositsCreatePage() {
                     className="font-mono text-faint"
                     style={{ fontSize: '0.6875rem', marginTop: '1rem', lineHeight: 1.4, borderTop: '1px dotted var(--color-border)', paddingTop: '0.5rem' }}
                   >
-                    * Nota digital ini akan diverifikasi ulang saat fisik sampah ditimbang di meja drop point oleh petugas terverifikasi.
+                    * Nota digital ini akan diverifikasi dan ditimbang per item oleh petugas di lokasi drop point.
                   </div>
                 </div>
               </div>

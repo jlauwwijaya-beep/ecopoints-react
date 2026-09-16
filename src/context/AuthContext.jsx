@@ -77,7 +77,19 @@ function formatApiDeposit(d) {
     minute: '2-digit'
   });
 
-  const wasteName = d.waste_type ? d.waste_type.name : 'Sampah Terpilah';
+  const items = Array.isArray(d.items) ? d.items : [];
+  let wasteName = 'Sampah Terpilah';
+  if (items.length > 1) {
+    const firstType = items[0].waste_type_name || items[0].waste_type?.name || 'Sampah';
+    wasteName = `${firstType} (+${items.length - 1} jenis lain)`;
+  } else if (items.length === 1) {
+    wasteName = items[0].waste_type_name || items[0].waste_type?.name || 'Sampah';
+  } else if (d.waste_type) {
+    wasteName = d.waste_type.name;
+  } else if (d.waste_type_name) {
+    wasteName = d.waste_type_name;
+  }
+
   let cat = 'anorganik';
   const lower = wasteName.toLowerCase();
   if (lower.includes('organik') || lower.includes('kompos')) {
@@ -86,16 +98,29 @@ function formatApiDeposit(d) {
     cat = 'b3';
   }
 
+  const weight = d.total_weight_kg !== undefined && d.total_weight_kg !== null
+    ? d.total_weight_kg
+    : (d.weight_kg !== undefined && d.weight_kg !== null ? d.weight_kg : 0);
+
+  const points = d.earned_points !== undefined && d.earned_points !== null
+    ? d.earned_points
+    : (d.points_earned !== undefined && d.points_earned !== null
+        ? d.points_earned
+        : (d.estimated_points !== undefined && d.estimated_points !== null
+            ? d.estimated_points
+            : Math.round(weight * (d.waste_type?.points_per_kg || 500))));
+
   return {
     id: `DEP-${String(d.id).padStart(4, '0')}`,
     rawId: d.id,
     date: dateStr,
     category: cat,
     type: wasteName,
-    weight: d.weight_kg,
-    points: d.points_earned || Math.round(d.weight_kg * (d.waste_type?.points_per_kg || 500)),
+    weight: Number(weight),
+    points: Number(points),
     status: d.status || 'verified',
-    location: d.drop_point ? d.drop_point.name : 'Drop Point EcoPoints Pusat'
+    location: d.drop_point ? d.drop_point.name : (d.drop_point_name || 'Drop Point EcoPoints Pusat'),
+    items: items
   };
 }
 
@@ -415,12 +440,30 @@ export function AuthProvider({ children }) {
 
     // Send to Go API if token available
     if (token) {
-      const payload = {
-        waste_type_id: Number(depositData.waste_type_id || 1),
-        weight_kg: parseFloat(depositData.weight),
-        drop_point_id: depositData.drop_point_id ? Number(depositData.drop_point_id) : null,
-        notes: depositData.notes || ''
-      };
+      let payload;
+      if (Array.isArray(depositData.items) && depositData.items.length > 0) {
+        payload = {
+          drop_point_id: depositData.drop_point_id ? Number(depositData.drop_point_id) : null,
+          notes: depositData.notes || '',
+          items: depositData.items.map(it => ({
+            waste_type_id: Number(it.waste_type_id || 1),
+            weight_kg: parseFloat(it.weight_kg ?? it.weight ?? 0)
+          }))
+        };
+      } else {
+        payload = {
+          waste_type_id: Number(depositData.waste_type_id || 1),
+          weight_kg: parseFloat(depositData.weight || 0),
+          drop_point_id: depositData.drop_point_id ? Number(depositData.drop_point_id) : null,
+          notes: depositData.notes || '',
+          items: [
+            {
+              waste_type_id: Number(depositData.waste_type_id || 1),
+              weight_kg: parseFloat(depositData.weight || 0)
+            }
+          ]
+        };
+      }
 
       const res = await depositApi.create(payload);
       if (res.success && res.data) {
@@ -442,21 +485,28 @@ export function AuthProvider({ children }) {
         minute: '2-digit'
       });
 
+      const totalWeight = depositData.items
+        ? depositData.items.reduce((s, it) => s + (parseFloat(it.weight_kg || it.weight) || 0), 0)
+        : parseFloat(depositData.weight || 0);
+
+      const totalPts = Math.floor(depositData.points || 0);
+
       savedItem = {
         id: newId,
         date: newDate,
-        category: depositData.category,
-        type: depositData.type,
-        weight: parseFloat(depositData.weight),
-        points: Math.floor(depositData.points),
+        category: depositData.category || 'anorganik',
+        type: depositData.type || 'Sampah Terpilah',
+        weight: totalWeight,
+        points: totalPts,
         status: 'verified',
-        location: depositData.location || 'Drop Point EcoPoints Pusat'
+        location: depositData.location || 'Drop Point EcoPoints Pusat',
+        items: depositData.items || []
       };
 
       // Add points to local user
       setUser(prev => ({
         ...prev,
-        points: (prev?.points || 0) + Math.floor(depositData.points)
+        points: (prev?.points || 0) + totalPts
       }));
     }
 

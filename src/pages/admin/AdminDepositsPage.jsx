@@ -10,6 +10,7 @@ export default function AdminDepositsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [modal, setModal] = useState(null); // { deposit, action: 'verify'|'reject' }
+  const [modalItems, setModalItems] = useState([]);
   const [notes, setNotes] = useState('');
   const [actualWeight, setActualWeight] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -44,10 +45,13 @@ export default function AdminDepositsPage() {
       const userMatch = String(d.user_name || d.user?.name || '').toLowerCase().includes(q);
       const emailMatch = String(d.user?.email || '').toLowerCase().includes(q);
       const wasteMatch = String(d.waste_type_name || d.waste_type?.name || '').toLowerCase().includes(q);
+      const itemsMatch = Array.isArray(d.items) && d.items.some(it =>
+        String(it.waste_type_name || it.waste_type?.name || '').toLowerCase().includes(q)
+      );
       const dropMatch = String(d.drop_point_name || d.drop_point?.name || '').toLowerCase().includes(q);
       const notesMatch = String(d.notes || '').toLowerCase().includes(q);
 
-      if (!idMatch && !codeMatch && !userMatch && !emailMatch && !wasteMatch && !dropMatch && !notesMatch) {
+      if (!idMatch && !codeMatch && !userMatch && !emailMatch && !wasteMatch && !itemsMatch && !dropMatch && !notesMatch) {
         return false;
       }
     }
@@ -84,18 +88,66 @@ export default function AdminDepositsPage() {
     setFilter('all');
   };
 
+  const openModal = (d, action) => {
+    setError('');
+    setNotes('');
+    setModal({ deposit: d, action });
+
+    if (Array.isArray(d.items) && d.items.length > 0) {
+      setModalItems(d.items.map(it => ({
+        id: it.id,
+        waste_type_name: it.waste_type_name || it.waste_type?.name || 'Sampah',
+        points_per_kg: it.points_per_kg || it.waste_type?.points_per_kg || 300,
+        weight_kg: it.weight_kg,
+        actualWeight: String(it.actual_weight_kg || it.weight_kg || '')
+      })));
+      setActualWeight('');
+    } else {
+      setModalItems([]);
+      setActualWeight(String(d.weight_kg || ''));
+    }
+  };
+
+  const handleModalItemWeightChange = (index, val) => {
+    setModalItems(prev => prev.map((item, idx) => idx === index ? { ...item, actualWeight: val } : item));
+  };
+
   const handleAction = async () => {
     if (!modal) return;
-    if (modal.action === 'verify' && (!actualWeight || Number(actualWeight) <= 0)) {
-      setError('Masukkan berat aktual hasil timbangan sebelum verifikasi.');
-      return;
-    }
-    setActionLoading(true);
+    setError('');
+
     const status = modal.action === 'verify' ? 'verified' : 'rejected';
-    const res = await adminApi.updateDepositStatus(modal.deposit.id, status, notes || undefined, actualWeight || undefined);
+
+    if (modal.action === 'verify') {
+      if (modalItems.length > 0) {
+        for (const it of modalItems) {
+          if (!it.actualWeight || Number(it.actualWeight) <= 0) {
+            setError(`Masukkan berat aktual yang valid untuk item ${it.waste_type_name}.`);
+            return;
+          }
+        }
+      } else if (!actualWeight || Number(actualWeight) <= 0) {
+        setError('Masukkan berat aktual hasil timbangan sebelum verifikasi.');
+        return;
+      }
+    }
+
+    setActionLoading(true);
+    let res;
+    if (modalItems.length > 0) {
+      const itemsPayload = modalItems.map(it => ({
+        item_id: it.id,
+        weight_kg: Number(it.actualWeight)
+      }));
+      res = await adminApi.updateDepositStatus(modal.deposit.id, status, notes || undefined, undefined, itemsPayload);
+    } else {
+      res = await adminApi.updateDepositStatus(modal.deposit.id, status, notes || undefined, actualWeight || undefined);
+    }
+
     if (res.success) {
       await loadDeposits();
       setModal(null);
+      setModalItems([]);
       setNotes('');
       setActualWeight('');
     } else {
@@ -122,6 +174,25 @@ export default function AdminDepositsPage() {
     });
   };
 
+  const getWasteTypeDisplay = (d) => {
+    if (Array.isArray(d.items) && d.items.length > 1) {
+      const first = d.items[0].waste_type_name || d.items[0].waste_type?.name || 'Sampah';
+      return `${first} (+${d.items.length - 1} jenis)`;
+    }
+    if (Array.isArray(d.items) && d.items.length === 1) {
+      return d.items[0].waste_type_name || d.items[0].waste_type?.name || 'Sampah';
+    }
+    return d.waste_type_name || d.waste_type?.name || 'Sampah';
+  };
+
+  const calculatedVerifiedPoints = modalItems.length > 0
+    ? modalItems.reduce((sum, it) => sum + Math.floor(Number(it.actualWeight || 0) * Number(it.points_per_kg || 0)), 0)
+    : Math.floor(Number(actualWeight || 0) * Number(modal?.deposit?.points_per_kg || modal?.deposit?.waste_type?.points_per_kg || 500));
+
+  const totalRegisteredWeight = modal?.deposit?.items?.length
+    ? modal.deposit.items.reduce((sum, it) => sum + Number(it.weight_kg || 0), 0)
+    : Number(modal?.deposit?.total_weight_kg || modal?.deposit?.weight_kg || 0);
+
   return (
     <>
       <AdminNav />
@@ -138,7 +209,7 @@ export default function AdminDepositsPage() {
             <div>
               <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Manajemen Setoran</h1>
               <p className="text-faint font-mono" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Verifikasi & kelola setoran nasabah
+                Verifikasi & kelola setoran nasabah • Multi-Item Supported
               </p>
             </div>
           </div>
@@ -354,7 +425,8 @@ export default function AdminDepositsPage() {
                   <th>ID</th>
                   <th>Nasabah</th>
                   <th>Jenis Sampah</th>
-                  <th>Berat (kg)</th>
+                  <th>Total Berat (kg)</th>
+                  <th>Poin</th>
                   <th>Drop Point</th>
                   <th>Waktu</th>
                   <th>Status</th>
@@ -362,49 +434,54 @@ export default function AdminDepositsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(d => (
-                  <tr key={d.id}>
-                    <td className="font-mono" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>#{d.id}</td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{d.user_name || d.user?.name || '-'}</div>
-                      <div className="text-faint" style={{ fontSize: '0.75rem' }}>{d.user?.email || ''}</div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className="category-dot category-dot-anorganik"></span>
-                        {d.waste_type_name || d.waste_type?.name || 'Sampah'}
-                      </div>
-                    </td>
-                    <td className="font-mono tabular-nums" style={{ fontWeight: 700 }}>{d.weight_kg?.toFixed(1) || '0.0'}</td>
-                    <td style={{ fontSize: '0.8125rem' }}>{d.drop_point_name || d.drop_point?.name || '-'}</td>
-                    <td style={{ fontSize: '0.8125rem' }}>{formatDate(d.created_at)}</td>
-                    <td>{statusBadge(d.status)}</td>
-                    <td>
-                      {d.status === 'pending' ? (
-                        <div style={{ display: 'flex', gap: '0.375rem' }}>
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => { setModal({ deposit: d, action: 'verify' }); setNotes(''); setActualWeight(String(d.weight_kg || '')); }}
-                            style={{ fontSize: '0.6875rem' }}
-                          >Verifikasi</button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => { setModal({ deposit: d, action: 'reject' }); setNotes(''); setActualWeight(String(d.weight_kg || '')); }}
-                            style={{ fontSize: '0.6875rem' }}
-                          >Tolak</button>
+                {filtered.map(d => {
+                  const weightDisplay = Number(d.total_weight_kg !== undefined ? d.total_weight_kg : (d.weight_kg || 0)).toFixed(1);
+                  const pointsDisplay = Number(d.earned_points || d.points_earned || d.estimated_points || 0).toLocaleString('id-ID');
+                  return (
+                    <tr key={d.id}>
+                      <td className="font-mono" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>#{d.id}</td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{d.user_name || d.user?.name || '-'}</div>
+                        <div className="text-faint" style={{ fontSize: '0.75rem' }}>{d.user?.email || ''}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="category-dot category-dot-anorganik"></span>
+                          <span style={{ fontWeight: 600 }}>{getWasteTypeDisplay(d)}</span>
                         </div>
-                      ) : (
-                        <span className="text-faint font-mono" style={{ fontSize: '0.75rem' }}>—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="font-mono tabular-nums" style={{ fontWeight: 700 }}>{weightDisplay}</td>
+                      <td className="font-mono tabular-nums text-poin" style={{ fontWeight: 700 }}>+{pointsDisplay}</td>
+                      <td style={{ fontSize: '0.8125rem' }}>{d.drop_point_name || d.drop_point?.name || '-'}</td>
+                      <td style={{ fontSize: '0.8125rem' }}>{formatDate(d.created_at)}</td>
+                      <td>{statusBadge(d.status)}</td>
+                      <td>
+                        {d.status === 'pending' ? (
+                          <div style={{ display: 'flex', gap: '0.375rem' }}>
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => openModal(d, 'verify')}
+                              style={{ fontSize: '0.6875rem' }}
+                            >Verifikasi</button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => openModal(d, 'reject')}
+                              style={{ fontSize: '0.6875rem' }}
+                            >Tolak</button>
+                          </div>
+                        ) : (
+                          <span className="text-faint font-mono" style={{ fontSize: '0.75rem' }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
 
-        {/* Modal */}
+        {/* Verification / Rejection Modal */}
         {modal && (
           <div style={{
             position: 'fixed', inset: 0, zIndex: 100,
@@ -416,65 +493,110 @@ export default function AdminDepositsPage() {
           >
             <div
               className="card fade-in"
-              style={{ maxWidth: 480, width: '100%', background: 'var(--color-paper)' }}
+              style={{ maxWidth: 540, width: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'var(--color-paper)' }}
               onClick={e => e.stopPropagation()}
             >
               <div className="card-header">
                 <h3 className="card-title">
-                  {modal.action === 'verify' ? 'Verifikasi Setoran' : 'Tolak Setoran'}
+                  {modal.action === 'verify' ? 'Verifikasi Setoran Nasabah' : 'Tolak Setoran'}
                 </h3>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
                 <div className="receipt-box" style={{ marginBottom: '1rem' }}>
                   <div className="receipt-row">
-                    <span className="receipt-row-label">ID</span>
+                    <span className="receipt-row-label">ID SETORAN</span>
                     <span className="receipt-row-dots"></span>
                     <span className="receipt-row-value">#{modal.deposit.id}</span>
                   </div>
                   <div className="receipt-row">
-                    <span className="receipt-row-label">Nasabah</span>
+                    <span className="receipt-row-label">NASABAH</span>
                     <span className="receipt-row-dots"></span>
                     <span className="receipt-row-value">{modal.deposit.user_name || modal.deposit.user?.name || '-'}</span>
                   </div>
                   <div className="receipt-row">
-                    <span className="receipt-row-label">Jenis</span>
-                    <span className="receipt-row-dots"></span>
-                    <span className="receipt-row-value">{modal.deposit.waste_type_name || modal.deposit.waste_type?.name || '-'}</span>
-                  </div>
-                  <div className="receipt-row">
-                    <span className="receipt-row-label">Drop Point</span>
+                    <span className="receipt-row-label">DROP POINT</span>
                     <span className="receipt-row-dots"></span>
                     <span className="receipt-row-value">{modal.deposit.drop_point_name || modal.deposit.drop_point?.name || '-'}</span>
                   </div>
                   <div className="receipt-row">
-                    <span className="receipt-row-label">Berat Terdaftar</span>
+                    <span className="receipt-row-label">TOTAL BERAT AWAL</span>
                     <span className="receipt-row-dots"></span>
-                    <span className="receipt-row-value">{modal.deposit.weight_kg?.toFixed(1)} kg</span>
+                    <span className="receipt-row-value">{totalRegisteredWeight.toFixed(1)} kg</span>
                   </div>
                   <div className="receipt-total">
                     <span>{modal.action === 'verify' ? 'Poin Setelah Verifikasi' : 'Estimasi Poin'}</span>
                     <span style={{ color: 'var(--color-poin)' }}>
                       ★ {modal.action === 'verify'
-                        ? Math.floor(Number(actualWeight || 0) * Number(modal.deposit.points_per_kg || modal.deposit.waste_type?.points_per_kg || 500))
-                        : (modal.deposit.earned_points || modal.deposit.estimated_points || modal.deposit.points_earned || Math.round((modal.deposit.weight_kg || 0) * (modal.deposit.points_per_kg || modal.deposit.waste_type?.points_per_kg || 500)))}
+                        ? calculatedVerifiedPoints.toLocaleString('id-ID')
+                        : (modal.deposit.earned_points || modal.deposit.estimated_points || modal.deposit.points_earned || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
                 </div>
 
+                {/* Verification Form Inputs */}
                 {modal.action === 'verify' && (
-                  <div className="form-group">
-                    <label className="form-label">Berat aktual setelah ditimbang (kg)</label>
-                    <input
-                      className="form-input"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={actualWeight}
-                      onChange={e => setActualWeight(e.target.value)}
-                      required
-                    />
-                    <p className="form-hint">Poin akan dihitung ulang berdasarkan berat aktual ini.</p>
+                  <div style={{ marginBottom: '1rem' }}>
+                    {modalItems.length > 0 ? (
+                      <div>
+                        <label className="form-label" style={{ fontWeight: 700 }}>
+                          Input Berat Aktual Per Item (kg)
+                        </label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          {modalItems.map((item, idx) => (
+                            <div
+                              key={item.id || idx}
+                              style={{
+                                padding: '0.75rem',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface)'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+                                <strong>{idx + 1}. {item.waste_type_name}</strong>
+                                <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
+                                  Tarif: {item.points_per_kg} pts/kg
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input
+                                  className="form-input font-mono"
+                                  type="number"
+                                  min="0.01"
+                                  step="0.01"
+                                  value={item.actualWeight}
+                                  onChange={e => handleModalItemWeightChange(idx, e.target.value)}
+                                  placeholder="Berat aktual (kg)"
+                                  style={{ fontWeight: 700 }}
+                                  required
+                                />
+                                <span className="font-mono text-faint" style={{ fontSize: '0.8rem' }}>KG</span>
+                                <span className="font-mono text-poin" style={{ fontSize: '0.8rem', fontWeight: 700, marginLeft: 'auto' }}>
+                                  +{Math.floor(Number(item.actualWeight || 0) * Number(item.points_per_kg || 0)).toLocaleString('id-ID')} pts
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="form-group">
+                        <label className="form-label">Berat aktual setelah ditimbang (kg)</label>
+                        <input
+                          className="form-input font-mono"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={actualWeight}
+                          onChange={e => setActualWeight(e.target.value)}
+                          style={{ fontWeight: 700 }}
+                          required
+                        />
+                      </div>
+                    )}
+                    <p className="form-hint" style={{ marginTop: '0.35rem' }}>
+                      Poin nasabah akan otomatis dihitung ulang berdasarkan berat aktual timbangan fisik.
+                    </p>
                   </div>
                 )}
 
@@ -484,7 +606,7 @@ export default function AdminDepositsPage() {
                     className="form-textarea"
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
-                    rows={3}
+                    rows={2}
                     placeholder={modal.action === 'reject' ? 'Alasan penolakan...' : 'Catatan verifikasi...'}
                   />
                 </div>
@@ -497,7 +619,7 @@ export default function AdminDepositsPage() {
                   onClick={handleAction}
                   disabled={actionLoading}
                 >
-                  {actionLoading ? 'Memproses...' : modal.action === 'verify' ? 'Verifikasi' : 'Tolak'}
+                  {actionLoading ? 'Memproses...' : modal.action === 'verify' ? 'Verifikasi Setoran' : 'Tolak Setoran'}
                 </button>
               </div>
             </div>

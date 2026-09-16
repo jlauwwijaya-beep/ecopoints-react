@@ -162,15 +162,25 @@ export default function AdminDashboardPage() {
         const verified = deposits.filter(d => d.status === 'verified');
         const byType = {};
         verified.forEach(d => {
-          const id = d.waste_type?.id || d.waste_type_id || 'unknown';
-          if (!byType[id]) byType[id] = { waste_type_id: id, waste_type_name: d.waste_type?.name || 'Lainnya', total_weight_kg: 0, total_deposits: 0, total_points: 0 };
-          byType[id].total_weight_kg += Number(d.weight_kg || 0);
-          byType[id].total_deposits += 1;
-          byType[id].total_points += Number(d.points_earned || 0);
+          if (Array.isArray(d.items) && d.items.length > 0) {
+            d.items.forEach(it => {
+              const id = it.waste_type_id || it.waste_type?.id || 'unknown';
+              if (!byType[id]) byType[id] = { waste_type_id: id, waste_type_name: it.waste_type_name || it.waste_type?.name || 'Lainnya', total_weight_kg: 0, total_deposits: 0, total_points: 0 };
+              byType[id].total_weight_kg += Number(it.actual_weight_kg || it.weight_kg || 0);
+              byType[id].total_deposits += 1;
+              byType[id].total_points += Number(it.earned_points || it.points_earned || 0);
+            });
+          } else {
+            const id = d.waste_type?.id || d.waste_type_id || 'unknown';
+            if (!byType[id]) byType[id] = { waste_type_id: id, waste_type_name: d.waste_type?.name || d.waste_type_name || 'Lainnya', total_weight_kg: 0, total_deposits: 0, total_points: 0 };
+            byType[id].total_weight_kg += Number(d.total_weight_kg || d.weight_kg || 0);
+            byType[id].total_deposits += 1;
+            byType[id].total_points += Number(d.earned_points || d.points_earned || 0);
+          }
         });
         rpt = {
           total_deposits: deposits.length,
-          total_weight_kg: verified.reduce((s, d) => s + Number(d.weight_kg || 0), 0),
+          total_weight_kg: verified.reduce((s, d) => s + Number(d.total_weight_kg || d.weight_kg || 0), 0),
           total_points_issued: txs.filter(t => t.type === 'credit').reduce((s, t) => s + Number(t.amount || 0), 0),
           total_points_redeemed: txs.filter(t => t.type === 'debit').reduce((s, t) => s + Number(t.amount || 0), 0),
           by_waste_type: Object.values(byType),

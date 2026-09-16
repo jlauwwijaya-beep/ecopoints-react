@@ -233,18 +233,6 @@ export default function DepositsIndexPage() {
                     <span className="font-mono" style={{ fontSize: '0.75rem' }}>{selectedDeposit.date}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>KATEGORI:</span>
-                    <span className="font-mono" style={{ fontSize: '0.75rem' }}>{selectedDeposit.category.toUpperCase()}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>JENIS:</span>
-                    <span className="font-mono" style={{ fontSize: '0.75rem' }}>{selectedDeposit.type}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>BERAT:</span>
-                    <span className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 700 }}>{selectedDeposit.weight} KG</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>LOKASI:</span>
                     <span className="font-mono" style={{ fontSize: '0.75rem' }}>{selectedDeposit.location}</span>
                   </div>
@@ -252,6 +240,39 @@ export default function DepositsIndexPage() {
                     <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>STATUS:</span>
                     <StatusBadge status={selectedDeposit.status} />
                   </div>
+
+                  {Array.isArray(selectedDeposit.items) && selectedDeposit.items.length > 0 ? (
+                    <div style={{ borderTop: '1px dashed var(--color-border)', margin: '0.65rem 0', paddingTop: '0.65rem' }}>
+                      <div className="font-mono text-faint" style={{ fontSize: '0.7rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                        RINCIAN ITEM ({selectedDeposit.items.length} JENIS):
+                      </div>
+                      {selectedDeposit.items.map((it, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                          <span>{idx + 1}. {it.waste_type_name || it.waste_type?.name || 'Sampah'} ({Number(it.actual_weight_kg || it.weight_kg || 0).toFixed(1)} kg)</span>
+                          <span className="font-mono text-poin" style={{ fontWeight: 600 }}>
+                            +{Number(it.earned_points || it.points_earned || (Number(it.actual_weight_kg || it.weight_kg || 0) * (it.points_per_kg || 300))).toLocaleString('id-ID')} pts
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>KATEGORI:</span>
+                        <span className="font-mono" style={{ fontSize: '0.75rem' }}>{selectedDeposit.category.toUpperCase()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>JENIS:</span>
+                        <span className="font-mono" style={{ fontSize: '0.75rem' }}>{selectedDeposit.type}</span>
+                      </div>
+                    </>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--color-border)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                    <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>TOTAL BERAT:</span>
+                    <span className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 700 }}>{Number(selectedDeposit.weight || 0).toFixed(1)} KG</span>
+                  </div>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid var(--color-ink)', paddingTop: '0.75rem', marginTop: '0.75rem' }}>
                     <span className="font-mono" style={{ fontWeight: 700 }}>POIN DIPEROLEH:</span>
                     <span className="font-mono text-poin" style={{ fontWeight: 800, fontSize: '1.125rem' }}>

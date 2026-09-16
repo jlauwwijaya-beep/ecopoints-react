@@ -153,11 +153,18 @@ export const pointApi = {
 // Admin APIs
 export const adminApi = {
   // Deposit management
-  updateDepositStatus: (id, status, notes, weightKg) =>
-    request(`/waste-deposits/${id}/${status === 'verified' ? 'verify' : 'reject'}`, {
+  updateDepositStatus: (id, status, notes, weightKg, items) => {
+    const payload = {
+      status,
+      ...(notes !== undefined ? { notes } : {}),
+      ...(items && items.length > 0 ? { items } : {}),
+      ...(weightKg !== undefined && weightKg !== '' ? { weight_kg: Number(weightKg) } : {})
+    };
+    return request(`/waste-deposits/${id}/${status === 'verified' ? 'verify' : 'reject'}`, {
       method: 'PUT',
-      body: JSON.stringify({ status, notes, ...(weightKg ? { weight_kg: Number(weightKg) } : {}) })
-    }),
+      body: JSON.stringify(payload)
+    });
+  },
 
   // Waste type CRUD
   createWasteType: (payload) =>
