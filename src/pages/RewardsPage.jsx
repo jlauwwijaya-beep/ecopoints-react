@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { resolveApiAssetUrl } from '../api/apiClient';
 import AppNav from '../components/layout/AppNav';
 import Footer from '../components/layout/Footer';
 import Button from '../components/ui/Button';
@@ -75,7 +76,73 @@ export default function RewardsPage() {
                   )}
 
                   <div>
-                    {item.image && <img src={item.image} alt={item.name} style={{ width: '100%', height: 150, objectFit: 'cover', marginBottom: '1rem', border: '1px solid var(--color-border)' }} />}
+                    {item.image ? (
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: '100%',
+                          height: 160,
+                          marginBottom: '1rem',
+                          borderRadius: '4px',
+                          overflow: 'hidden',
+                          backgroundColor: '#f3f1ea',
+                          border: '1px solid var(--color-border)'
+                        }}
+                      >
+                        <img
+                          src={resolveApiAssetUrl(item.image)}
+                          alt={item.name}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.parentElement?.querySelector('.voucher-fallback');
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block'
+                          }}
+                        />
+                        <div
+                          className="voucher-fallback"
+                          style={{
+                            display: 'none',
+                            width: '100%',
+                            height: '100%',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'column',
+                            gap: '0.35rem',
+                            background: 'linear-gradient(135deg, rgba(38,71,58,0.06) 0%, rgba(124,138,62,0.12) 100%)',
+                            color: 'var(--color-primary)'
+                          }}
+                        >
+                          <span style={{ fontSize: '2rem' }}>🎟️</span>
+                          <span className="font-mono text-faint" style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase' }}>VOUCHER RESMI</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: 120,
+                          marginBottom: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'column',
+                          gap: '0.35rem',
+                          background: 'linear-gradient(135deg, rgba(38,71,58,0.06) 0%, rgba(124,138,62,0.12) 100%)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: '4px',
+                          color: 'var(--color-primary)'
+                        }}
+                      >
+                        <span style={{ fontSize: '2rem' }}>🎟️</span>
+                        <span className="font-mono text-faint" style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase' }}>VOUCHER RESMI</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem' }}>
                       <span className="badge badge-neutral" style={{ fontSize: '0.625rem' }}>{item.category}</span>
                       <span className="font-mono text-faint" style={{ fontSize: '0.6875rem' }}>Sisa: {item.stock} unit</span>

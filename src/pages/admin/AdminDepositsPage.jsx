@@ -6,6 +6,9 @@ export default function AdminDepositsPage() {
   const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [modal, setModal] = useState(null); // { deposit, action: 'verify'|'reject' }
   const [notes, setNotes] = useState('');
   const [actualWeight, setActualWeight] = useState('');
@@ -26,7 +29,60 @@ export default function AdminDepositsPage() {
 
   useEffect(() => { loadDeposits(); }, [loadDeposits]);
 
-  const filtered = filter === 'all' ? deposits : deposits.filter(d => d.status === filter);
+  // Filter gabungan: Status, Pencarian Ketikan, dan Rentang Tanggal
+  const filtered = deposits.filter((d) => {
+    // 1. Filter Status
+    if (filter !== 'all' && d.status !== filter) {
+      return false;
+    }
+
+    // 2. Pencarian Ketikan (ID, Kode, Nasabah, Email, Jenis Sampah, Drop Point, Catatan)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const idMatch = String(d.id || '').toLowerCase().includes(q);
+      const codeMatch = String(d.code || '').toLowerCase().includes(q);
+      const userMatch = String(d.user_name || d.user?.name || '').toLowerCase().includes(q);
+      const emailMatch = String(d.user?.email || '').toLowerCase().includes(q);
+      const wasteMatch = String(d.waste_type_name || d.waste_type?.name || '').toLowerCase().includes(q);
+      const dropMatch = String(d.drop_point_name || d.drop_point?.name || '').toLowerCase().includes(q);
+      const notesMatch = String(d.notes || '').toLowerCase().includes(q);
+
+      if (!idMatch && !codeMatch && !userMatch && !emailMatch && !wasteMatch && !dropMatch && !notesMatch) {
+        return false;
+      }
+    }
+
+    // 3. Pencarian Berdasarkan Tanggal
+    if (startDate || endDate) {
+      const dateVal = d.created_at || d.CreatedAt;
+      if (!dateVal) return false;
+      const itemDate = new Date(dateVal);
+      if (Number.isNaN(itemDate.getTime())) return false;
+
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        if (itemDate < start) return false;
+      }
+
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (itemDate > end) return false;
+      }
+    }
+
+    return true;
+  });
+
+  const hasActiveFilters = searchQuery.trim() !== '' || startDate !== '' || endDate !== '' || filter !== 'all';
+
+  const resetAllFilters = () => {
+    setSearchQuery('');
+    setStartDate('');
+    setEndDate('');
+    setFilter('all');
+  };
 
   const handleAction = async () => {
     if (!modal) return;
@@ -71,7 +127,7 @@ export default function AdminDepositsPage() {
       <AdminNav />
       <main className="container-wide admin-page-content" style={{ padding: '2rem 1rem' }}>
         {/* Page Header */}
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <div style={{
               width: 40, height: 40,
@@ -90,10 +146,165 @@ export default function AdminDepositsPage() {
 
         {error && <div style={{ padding: '0.75rem', marginBottom: '1rem', border: '1px solid #e5a39a', background: '#fff3f1', color: '#a63225' }}>{error}</div>}
 
-        {/* Filter Tabs */}
+        {/* Panel Pencarian & Filter */}
+        <div
+          className="card"
+          style={{
+            marginBottom: '1.5rem',
+            padding: '1.25rem',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)'
+          }}
+        >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+              alignItems: 'flex-end'
+            }}
+          >
+            {/* Input Pencarian Ketikan */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <label
+                className="font-mono text-faint"
+                style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}
+              >
+                Pencarian Ketikan
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="ID, nasabah, jenis, lokasi..."
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 2rem 0.6rem 0.75rem',
+                    fontSize: '0.85rem',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: '#fff',
+                    borderRadius: 0
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      position: 'absolute',
+                      right: '0.5rem',
+                      padding: '0.2rem 0.4rem',
+                      fontSize: '0.8rem',
+                      color: 'var(--color-ink-faint)',
+                      fontWeight: 700
+                    }}
+                    title="Hapus ketikan"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Filter Dari Tanggal */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <label
+                className="font-mono text-faint"
+                style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}
+              >
+                Dari Tanggal
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.75rem',
+                  fontSize: '0.85rem',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: '#fff',
+                  borderRadius: 0
+                }}
+              />
+            </div>
+
+            {/* Filter Sampai Tanggal */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <label
+                className="font-mono text-faint"
+                style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}
+              >
+                Sampai Tanggal
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.75rem',
+                  fontSize: '0.85rem',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: '#fff',
+                  borderRadius: 0
+                }}
+              />
+            </div>
+
+            {/* Tombol Reset Filter */}
+            <div>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={resetAllFilters}
+                  className="btn btn-secondary btn-sm"
+                  style={{ width: '100%', height: '39px' }}
+                >
+                  Reset Filter
+                </button>
+              ) : (
+                <div style={{ height: '39px', display: 'flex', alignItems: 'center' }}>
+                  <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
+                    Total: <strong>{deposits.length}</strong> setoran
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Keterangan Filter Aktif */}
+          {hasActiveFilters && (
+            <div
+              style={{
+                marginTop: '0.85rem',
+                paddingTop: '0.75rem',
+                borderTop: '1px dashed var(--color-border)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                fontSize: '0.75rem'
+              }}
+            >
+              <span className="font-mono text-faint">
+                Menampilkan <strong>{filtered.length}</strong> dari <strong>{deposits.length}</strong> setoran
+                {searchQuery && <> · Kata kunci: <em>"{searchQuery}"</em></>}
+                {startDate && <> · Mulai: <strong>{startDate}</strong></>}
+                {endDate && <> · Sampai: <strong>{endDate}</strong></>}
+                {filter !== 'all' && <> · Status: <strong>{filter.toUpperCase()}</strong></>}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Filter Tabs Status */}
         <div style={{
           display: 'flex', gap: '0.5rem', marginBottom: '1.5rem',
-          borderBottom: '2px solid var(--color-border)', paddingBottom: '0.75rem'
+          borderBottom: '2px solid var(--color-border)', paddingBottom: '0.75rem',
+          flexWrap: 'wrap'
         }}>
           {[
             { key: 'all', label: 'Semua', count: deposits.length },
@@ -124,7 +335,16 @@ export default function AdminDepositsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <span className="font-mono text-faint">Tidak ada data setoran.</span>
+            <span className="font-mono text-faint">
+              {hasActiveFilters ? 'Tidak ada data setoran yang cocok dengan filter atau pencarian Anda.' : 'Tidak ada data setoran.'}
+            </span>
+            {hasActiveFilters && (
+              <div style={{ marginTop: '1rem' }}>
+                <button type="button" onClick={resetAllFilters} className="btn btn-sm btn-secondary">
+                  Bersihkan Filter
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="data-table-container fade-in">
@@ -215,15 +435,20 @@ export default function AdminDepositsPage() {
                   <div className="receipt-row">
                     <span className="receipt-row-label">Nasabah</span>
                     <span className="receipt-row-dots"></span>
-                    <span className="receipt-row-value">{modal.deposit.user?.name || '-'}</span>
+                    <span className="receipt-row-value">{modal.deposit.user_name || modal.deposit.user?.name || '-'}</span>
                   </div>
                   <div className="receipt-row">
                     <span className="receipt-row-label">Jenis</span>
                     <span className="receipt-row-dots"></span>
-                    <span className="receipt-row-value">{modal.deposit.waste_type?.name || '-'}</span>
+                    <span className="receipt-row-value">{modal.deposit.waste_type_name || modal.deposit.waste_type?.name || '-'}</span>
                   </div>
                   <div className="receipt-row">
-                    <span className="receipt-row-label">Berat</span>
+                    <span className="receipt-row-label">Drop Point</span>
+                    <span className="receipt-row-dots"></span>
+                    <span className="receipt-row-value">{modal.deposit.drop_point_name || modal.deposit.drop_point?.name || '-'}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="receipt-row-label">Berat Terdaftar</span>
                     <span className="receipt-row-dots"></span>
                     <span className="receipt-row-value">{modal.deposit.weight_kg?.toFixed(1)} kg</span>
                   </div>
@@ -231,8 +456,8 @@ export default function AdminDepositsPage() {
                     <span>{modal.action === 'verify' ? 'Poin Setelah Verifikasi' : 'Estimasi Poin'}</span>
                     <span style={{ color: 'var(--color-poin)' }}>
                       ★ {modal.action === 'verify'
-                        ? Math.floor(Number(actualWeight || 0) * Number(modal.deposit.waste_type?.points_per_kg || 500))
-                        : (modal.deposit.points_earned || Math.round((modal.deposit.weight_kg || 0) * (modal.deposit.waste_type?.points_per_kg || 500)))}
+                        ? Math.floor(Number(actualWeight || 0) * Number(modal.deposit.points_per_kg || modal.deposit.waste_type?.points_per_kg || 500))
+                        : (modal.deposit.earned_points || modal.deposit.estimated_points || modal.deposit.points_earned || Math.round((modal.deposit.weight_kg || 0) * (modal.deposit.points_per_kg || modal.deposit.waste_type?.points_per_kg || 500)))}
                     </span>
                   </div>
                 </div>

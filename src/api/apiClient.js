@@ -7,9 +7,17 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090/api
 
 export function resolveApiAssetUrl(path) {
   if (!path) return '';
-  if (/^https?:\/\//.test(path)) return path;
-  if (/^https?:\/\//.test(BASE_URL)) return new URL(path, `${BASE_URL}/`).toString();
-  return path;
+  if (/^https?:\/\//i.test(path)) return path;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (/^https?:\/\//i.test(BASE_URL)) {
+    try {
+      const url = new URL(cleanPath, BASE_URL);
+      return url.toString();
+    } catch {
+      return cleanPath;
+    }
+  }
+  return cleanPath;
 }
 
 let inMemoryToken = typeof window !== 'undefined' ? localStorage.getItem('ep_token') : null;
