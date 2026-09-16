@@ -668,7 +668,7 @@ export default function LandingPage() {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             <Button variant="primary" size="lg" onClick={() => navigate('/register')}>
-              Daftar Gratis Sekarang
+              Daftar Sekarang
             </Button>
           </div>
         </div>
