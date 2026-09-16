@@ -5,6 +5,13 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090/api/v1';
 
+export function resolveApiAssetUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+  if (/^https?:\/\//.test(BASE_URL)) return new URL(path, `${BASE_URL}/`).toString();
+  return path;
+}
+
 let inMemoryToken = typeof window !== 'undefined' ? localStorage.getItem('ep_token') : null;
 
 export function setAuthToken(token) {
@@ -159,6 +166,22 @@ export const adminApi = {
     request(`/waste-types/${id}`, { method: 'DELETE' }),
 
   // Reward CRUD
+  uploadRewardImage: async (file) => {
+    const token = getAuthToken();
+    const body = new FormData();
+    body.append('image', file);
+    try {
+      const res = await fetch(`${BASE_URL}/rewards/upload-image`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body,
+      });
+      const data = await res.json().catch(() => null);
+      return res.ok ? { success: true, data: data?.data ?? data } : { success: false, error: data?.message || 'Upload gambar gagal.' };
+    } catch {
+      return { success: false, error: 'Tidak dapat terhubung ke API saat upload gambar.' };
+    }
+  },
   createReward: (payload) =>
     request('/rewards', {
       method: 'POST',

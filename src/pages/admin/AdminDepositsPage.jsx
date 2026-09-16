@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { depositApi, adminApi } from '../../api/apiClient';
-import AppNav from '../../components/layout/AppNav';
+import AdminNav from '../../components/layout/AdminNav';
 
 export default function AdminDepositsPage() {
   const [deposits, setDeposits] = useState([]);
@@ -68,8 +68,8 @@ export default function AdminDepositsPage() {
 
   return (
     <>
-      <AppNav />
-      <main className="container-wide" style={{ padding: '2rem 1rem' }}>
+      <AdminNav />
+      <main className="container-wide admin-page-content" style={{ padding: '2rem 1rem' }}>
         {/* Page Header */}
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>

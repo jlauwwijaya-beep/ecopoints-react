@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '../../api/apiClient';
-import AppNav from '../../components/layout/AppNav';
+import AdminNav from '../../components/layout/AdminNav';
 
 const emptyForm = { name: '', email: '', password: '', role: 'user', points_balance: '' };
 const roleLabels = { user: 'User', petugas: 'Petugas', admin: 'Admin' };
-
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -54,8 +53,8 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <AppNav />
-      <main className="container-wide" style={{ padding: '2rem 1rem' }}>
+      <AdminNav />
+      <main className="container-wide admin-page-content" style={{ padding: '2rem 1rem' }}>
         <div style={{ marginBottom: '1.5rem' }}>
           <div className="text-faint font-mono" style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}>PANEL ADMIN // AKUN</div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Manajemen User, Petugas, dan Admin</h1>

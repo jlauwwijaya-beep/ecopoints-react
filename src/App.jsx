@@ -14,6 +14,7 @@ import RewardsPage from './pages/RewardsPage';
 import AdminDepositsPage from './pages/admin/AdminDepositsPage';
 import AdminManagementPage from './pages/admin/AdminManagementPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminRoute from './components/auth/AdminRoute';
 import PetugasRoute from './components/auth/PetugasRoute';
 import PetugasScanPage from './pages/petugas/PetugasScanPage';
@@ -75,7 +76,7 @@ export default function App() {
             path="/admin"
             element={
               <AdminRoute>
-                <AdminManagementPage section="overview" />
+                <AdminDashboardPage />
               </AdminRoute>
             }
           />

@@ -13,6 +13,10 @@ export default defineConfig({
         target: 'http://139.190.96.203:8092',
         changeOrigin: true,
       },
+      '/uploads': {
+        target: 'http://139.190.96.203:8092',
+        changeOrigin: true,
+      },
     },
   },
 })

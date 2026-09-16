@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { adminApi, depositApi, masterApi, pointApi, rewardApi } from '../../api/apiClient';
-import AppNav from '../../components/layout/AppNav';
+import { useLocation } from 'react-router-dom';
+import { adminApi, depositApi, masterApi, pointApi, rewardApi, resolveApiAssetUrl } from '../../api/apiClient';
+import AdminNav from '../../components/layout/AdminNav';
 
 const sectionMeta = {
   overview: { title: 'Panel Admin', subtitle: 'Kontrol operasional EcoPoints dalam satu tempat.' },
@@ -10,16 +10,6 @@ const sectionMeta = {
   redemptions: { title: 'Pantau Penukaran', subtitle: 'Periksa dan proses permintaan penukaran hadiah.' },
   reports: { title: 'Laporan', subtitle: 'Pantau ringkasan dampak dan aktivitas EcoPoints.' }
 };
-
-const navItems = [
-  ['overview', 'Ringkasan', '/admin'],
-  ['deposits', 'Manajemen Setoran', '/admin/deposits'],
-  ['points', 'Konfigurasi Poin', '/admin/points'],
-  ['rewards', 'Katalog Hadiah', '/admin/rewards'],
-  ['redemptions', 'Pantau Penukaran', '/admin/redemptions'],
-  ['reports', 'Laporan', '/admin/reports'],
-  ['users', 'Manajemen Akun', '/admin/users']
-];
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
@@ -63,6 +53,7 @@ function ErrorMessage({ message }) {
 }
 
 export default function AdminManagementPage({ section = 'overview' }) {
+  const { pathname } = useLocation();
   const [data, setData] = useState([]);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +61,8 @@ export default function AdminManagementPage({ section = 'overview' }) {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [statusLoading, setStatusLoading] = useState(null);
-  const [form, setForm] = useState({ name: '', point_cost: '', stock: '', unit_price_per_kg: '', points_per_kg: '', description: '' });
+  const [form, setForm] = useState({ name: '', point_cost: '', stock: '', unit_price_per_kg: '', points_per_kg: '', description: '', image: '' });
+  const [imageFile, setImageFile] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -95,21 +87,33 @@ export default function AdminManagementPage({ section = 'overview' }) {
 
   const resetForm = () => {
     setEditing(null);
-    setForm({ name: '', point_cost: '', stock: '', unit_price_per_kg: '', points_per_kg: '', description: '' });
+    setForm({ name: '', point_cost: '', stock: '', unit_price_per_kg: '', points_per_kg: '', description: '', image: '' });
+    setImageFile(null);
   };
 
   const editItem = (item) => {
     setEditing(item);
     setForm(section === 'points'
-      ? { name: item.name, unit_price_per_kg: item.unit_price_per_kg, points_per_kg: item.points_per_kg, description: item.description || '' }
-      : { name: item.name, point_cost: item.point_cost, stock: item.stock, description: item.description || '' });
+      ? { name: item.name, unit_price_per_kg: item.unit_price_per_kg, points_per_kg: item.points_per_kg, description: item.description || '', image: '' }
+      : { name: item.name, point_cost: item.point_cost, stock: item.stock, description: item.description || '', image: item.image || '' });
+    setImageFile(null);
   };
 
   const saveItem = async (event) => {
     event.preventDefault(); setSaving(true); setError('');
+    let image = form.image || undefined;
+    if (section === 'rewards' && imageFile) {
+      const upload = await adminApi.uploadRewardImage(imageFile);
+      if (!upload.success) {
+        setError(upload.error || 'Upload gambar gagal.');
+        setSaving(false);
+        return;
+      }
+      image = upload.data?.image;
+    }
     const result = section === 'points'
       ? (editing ? await adminApi.updateWasteType(editing.id, { name: form.name, unit_price_per_kg: Number(form.unit_price_per_kg), points_per_kg: Number(form.points_per_kg), description: form.description }) : await adminApi.createWasteType({ name: form.name, unit_price_per_kg: Number(form.unit_price_per_kg), points_per_kg: Number(form.points_per_kg), description: form.description, is_active: true }))
-      : (editing ? await adminApi.updateReward(editing.id, { name: form.name, point_cost: Number(form.point_cost), stock: Number(form.stock), description: form.description }) : await adminApi.createReward({ name: form.name, point_cost: Number(form.point_cost), stock: Number(form.stock), description: form.description, is_active: true }));
+      : (editing ? await adminApi.updateReward(editing.id, { name: form.name, point_cost: Number(form.point_cost), stock: Number(form.stock), description: form.description, ...(image ? { image } : {}) }) : await adminApi.createReward({ name: form.name, point_cost: Number(form.point_cost), stock: Number(form.stock), description: form.description, ...(image ? { image } : {}), is_active: true }));
     if (!result.success) setError(result.error || 'Perubahan gagal disimpan.'); else { resetForm(); await load(); }
     setSaving(false);
   };
@@ -129,12 +133,9 @@ export default function AdminManagementPage({ section = 'overview' }) {
 
   const meta = sectionMeta[section] || sectionMeta.overview;
   return <>
-    <AppNav />
-    <main className="container-wide" style={{ padding: '2rem 1rem' }}>
+    <AdminNav />
+    <main key={pathname} className="container-wide admin-page-content" style={{ padding: '2rem 1rem' }}>
       <div style={{ marginBottom: '1.5rem' }}><h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>{meta.title}</h1><p className="text-faint">{meta.subtitle}</p></div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
-        {navItems.map(([key, label, path]) => <Link key={key} to={path} className="btn btn-sm" style={{ background: section === key ? 'var(--color-ink)' : 'transparent', color: section === key ? 'var(--color-paper)' : 'var(--color-ink)', border: '1px solid var(--color-border)' }}>{label}</Link>)}
-      </div>
       <ErrorMessage message={error} />
 
       {(section === 'overview' || section === 'reports') && <>
@@ -147,7 +148,7 @@ export default function AdminManagementPage({ section = 'overview' }) {
       </>}
 
       {(section === 'points' || section === 'rewards') && <div className="admin-management-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
-        <form className="card" style={{ padding: '1.25rem' }} onSubmit={saveItem}><h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}>{editing ? 'Edit Data' : 'Tambah Data'}</h2><div className="form-group"><label className="form-label">Nama</label><input className="form-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>{section === 'points' ? <><div className="form-group"><label className="form-label">Harga per kg</label><input className="form-input" type="number" min="0" value={form.unit_price_per_kg} onChange={e => setForm({ ...form, unit_price_per_kg: e.target.value })} required /></div><div className="form-group"><label className="form-label">Poin per kg</label><input className="form-input" type="number" min="0" value={form.points_per_kg} onChange={e => setForm({ ...form, points_per_kg: e.target.value })} required /></div></> : <><div className="form-group"><label className="form-label">Biaya poin</label><input className="form-input" type="number" min="1" value={form.point_cost} onChange={e => setForm({ ...form, point_cost: e.target.value })} required /></div><div className="form-group"><label className="form-label">Stok</label><input className="form-input" type="number" min="0" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} required /></div></>}<div className="form-group"><label className="form-label">Deskripsi</label><textarea className="form-textarea" rows="3" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div><div style={{ display: 'flex', gap: '0.5rem' }}><button className="btn btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : editing ? 'Simpan Perubahan' : 'Tambah'}</button>{editing && <button type="button" className="btn btn-secondary" onClick={resetForm}>Batal</button>}</div></form>
+        <form className="card" style={{ padding: '1.25rem' }} onSubmit={saveItem}><h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}>{editing ? 'Edit Data' : 'Tambah Data'}</h2><div className="form-group"><label className="form-label">Nama</label><input className="form-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>{section === 'points' ? <><div className="form-group"><label className="form-label">Harga per kg</label><input className="form-input" type="number" min="0" value={form.unit_price_per_kg} onChange={e => setForm({ ...form, unit_price_per_kg: e.target.value })} required /></div><div className="form-group"><label className="form-label">Poin per kg</label><input className="form-input" type="number" min="0" value={form.points_per_kg} onChange={e => setForm({ ...form, points_per_kg: e.target.value })} required /></div></> : <><div className="form-group"><label className="form-label">Biaya poin</label><input className="form-input" type="number" min="1" value={form.point_cost} onChange={e => setForm({ ...form, point_cost: e.target.value })} required /></div><div className="form-group"><label className="form-label">Stok</label><input className="form-input" type="number" min="0" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} required /></div></>}<div className="form-group"><label className="form-label">Deskripsi</label><textarea className="form-textarea" rows="3" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>{section === 'rewards' && <div className="form-group"><label className="form-label">Foto Voucher</label><input className="form-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImageFile(e.target.files?.[0] || null)} />{(imageFile || form.image) && <img src={imageFile ? URL.createObjectURL(imageFile) : resolveApiAssetUrl(form.image)} alt="Pratinjau voucher" style={{ width: '100%', height: 120, objectFit: 'cover', marginTop: '0.5rem', border: '1px solid var(--color-border)' }} />}</div>}<div style={{ display: 'flex', gap: '0.5rem' }}><button className="btn btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : editing ? 'Simpan Perubahan' : 'Tambah'}</button>{editing && <button type="button" className="btn btn-secondary" onClick={resetForm}>Batal</button>}</div></form>
         <div className="data-table-container"><table className="data-table"><thead><tr><th>Nama</th>{section === 'points' ? <><th>Rp/kg</th><th>Poin/kg</th></> : <><th>Biaya</th><th>Stok</th></>}<th>Aksi</th></tr></thead><tbody>{loading ? <tr><td colSpan="5">Memuat data...</td></tr> : data.map(item => <tr key={item.id}><td><strong>{item.name}</strong><div className="text-faint" style={{ fontSize: '0.75rem' }}>{item.description || '-'}</div></td>{section === 'points' ? <><td>{Number(item.unit_price_per_kg || 0).toLocaleString('id-ID')}</td><td>{item.points_per_kg}</td></> : <><td>{Number(item.point_cost || 0).toLocaleString('id-ID')} pts</td><td>{item.stock}</td></>}<td><button className="btn btn-sm btn-secondary" onClick={() => editItem(item)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => removeItem(item)}>Hapus</button></td></tr>)}{!loading && !data.length && <tr><td colSpan="5" className="text-faint">Belum ada data.</td></tr>}</tbody></table></div>
       </div>}
 

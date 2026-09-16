@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authApi, depositApi, rewardApi, masterApi, pointApi, healthApi, setAuthToken } from '../api/apiClient';
+import { authApi, depositApi, rewardApi, masterApi, pointApi, healthApi, setAuthToken, resolveApiAssetUrl } from '../api/apiClient';
 
 const AuthContext = createContext(null);
 
@@ -204,7 +204,7 @@ export function AuthProvider({ children }) {
         stock: r.stock,
         category: 'Voucher',
         description: r.description || 'Reward penukaran EcoPoints resmi.',
-        image: r.image
+        image: resolveApiAssetUrl(r.image)
       }));
       setRewards(mapped);
     }

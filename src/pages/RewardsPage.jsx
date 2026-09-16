@@ -75,6 +75,7 @@ export default function RewardsPage() {
                   )}
 
                   <div>
+                    {item.image && <img src={item.image} alt={item.name} style={{ width: '100%', height: 150, objectFit: 'cover', marginBottom: '1rem', border: '1px solid var(--color-border)' }} />}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem' }}>
                       <span className="badge badge-neutral" style={{ fontSize: '0.625rem' }}>{item.category}</span>
                       <span className="font-mono text-faint" style={{ fontSize: '0.6875rem' }}>Sisa: {item.stock} unit</span>
