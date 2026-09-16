@@ -77,8 +77,8 @@ export default function AdminDepositsPage() {
               width: 40, height: 40,
               background: 'var(--color-primary)', color: 'var(--color-paper)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: '1.125rem'
-            }}>📦</div>
+              fontWeight: 800, fontSize: '0.75rem', fontFamily: 'var(--font-mono)'
+            }}>DEP</div>
             <div>
               <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Manajemen Setoran</h1>
               <p className="text-faint font-mono" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -166,12 +166,12 @@ export default function AdminDepositsPage() {
                             className="btn btn-sm btn-primary"
                             onClick={() => { setModal({ deposit: d, action: 'verify' }); setNotes(''); setActualWeight(String(d.weight_kg || '')); }}
                             style={{ fontSize: '0.6875rem' }}
-                          >✓ Verifikasi</button>
+                          >Verifikasi</button>
                           <button
                             className="btn btn-sm btn-danger"
                             onClick={() => { setModal({ deposit: d, action: 'reject' }); setNotes(''); setActualWeight(String(d.weight_kg || '')); }}
                             style={{ fontSize: '0.6875rem' }}
-                          >✗ Tolak</button>
+                          >Tolak</button>
                         </div>
                       ) : (
                         <span className="text-faint font-mono" style={{ fontSize: '0.75rem' }}>—</span>
@@ -201,7 +201,7 @@ export default function AdminDepositsPage() {
             >
               <div className="card-header">
                 <h3 className="card-title">
-                  {modal.action === 'verify' ? '✓ Verifikasi Setoran' : '✗ Tolak Setoran'}
+                  {modal.action === 'verify' ? 'Verifikasi Setoran' : 'Tolak Setoran'}
                 </h3>
               </div>
 
@@ -272,7 +272,7 @@ export default function AdminDepositsPage() {
                   onClick={handleAction}
                   disabled={actionLoading}
                 >
-                  {actionLoading ? 'Memproses...' : modal.action === 'verify' ? '✓ Verifikasi' : '✗ Tolak'}
+                  {actionLoading ? 'Memproses...' : modal.action === 'verify' ? 'Verifikasi' : 'Tolak'}
                 </button>
               </div>
             </div>

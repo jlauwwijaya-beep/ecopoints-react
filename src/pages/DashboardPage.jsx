@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AppNav from '../components/layout/AppNav';
@@ -46,7 +46,7 @@ export default function DashboardPage() {
                 ID NASABAH // {user?.memberId || 'EP-ID-8821'}
               </div>
               <h1 style={{ fontSize: '1.875rem', fontWeight: 800, marginTop: '0.25rem' }}>
-                Selamat datang, {user?.name || 'Budi Pratama'} 👋
+                Selamat datang, {user?.name || 'Budi Pratama'}
               </h1>
             </div>
             <div className="font-mono text-faint" style={{ fontSize: '0.8125rem' }}>
@@ -77,7 +77,7 @@ export default function DashboardPage() {
 
             <div>
               <div className="font-mono" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.55)' }}>
-                ⭐ SALDO POIN AKTIF ANDA
+                SALDO POIN AKTIF ANDA
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
                 <span className="font-mono tabular-nums" style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 800, lineHeight: 1, color: 'var(--color-poin)' }}>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <Button variant="secondary" size="md" onClick={() => navigate('/rewards')} style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}>
-                🎁 Tukar Reward
+                Tukar Reward
               </Button>
               <Button variant="primary" size="md" className="btn-shimmer" onClick={() => navigate('/deposits/create')} style={{ backgroundColor: 'var(--color-poin)', color: 'var(--color-ink)', border: 'none', fontWeight: 700 }}>
                 + Setor Sampah
@@ -104,15 +104,14 @@ export default function DashboardPage() {
           {/* Quick Links */}
           <div className="dash-fadein dash-fadein-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
             {[
-              { icon: '📋', title: 'Riwayat Setoran', desc: 'Pantau status penimbangan dan verifikasi petugas', link: '/deposits', badge: deposits.length + ' Catatan' },
-              { icon: '📊', title: 'Mutasi Poin', desc: 'Lihat aliran kredit poin masuk dan debit penukaran', link: '/points', badge: 'Keluar & Masuk' },
-              { icon: '🎁', title: 'Katalog Reward', desc: 'Tukarkan saldo poin dengan voucher, pulsa, atau sembako', link: '/rewards', badge: '6 Pilihan' }
+              { title: 'Riwayat Setoran', desc: 'Pantau status penimbangan dan verifikasi petugas', link: '/deposits', badge: deposits.length + ' Catatan' },
+              { title: 'Mutasi Poin', desc: 'Lihat aliran kredit poin masuk dan debit penukaran', link: '/points', badge: 'Keluar & Masuk' },
+              { title: 'Katalog Reward', desc: 'Tukarkan saldo poin dengan voucher, pulsa, atau sembako', link: '/rewards', badge: '6 Pilihan' }
             ].map((item, idx) => (
               <Link key={idx} to={item.link} className="quick-link-card" style={{ display: 'block', backgroundColor: 'var(--color-paper)', border: '1px solid var(--color-border)', padding: '1.5rem', transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)', textDecoration: 'none' }}>
-                <div style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }}>{item.icon}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
                   <span className="badge badge-neutral" style={{ fontSize: '0.625rem' }}>{item.badge}</span>
-                  <span className="font-mono text-faint" style={{ fontSize: '0.875rem' }}>→</span>
+                  <span className="font-mono text-faint" style={{ fontSize: '0.875rem' }}>&gt;</span>
                 </div>
                 <h3 className="quick-link-title" style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.375rem', transition: 'color 0.15s ease' }}>{item.title}</h3>
                 <p className="text-muted" style={{ fontSize: '0.8125rem', lineHeight: 1.4 }}>{item.desc}</p>
@@ -126,13 +125,12 @@ export default function DashboardPage() {
             {/* Recent Deposits */}
             <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>
-                <h3 style={{ fontSize: '1.0625rem', fontWeight: 700 }}>🌿 Aktivitas Setoran Terakhir</h3>
-                <Link to="/deposits" className="font-mono text-primary" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Lihat Semua →</Link>
+                <h3 style={{ fontSize: '1.0625rem', fontWeight: 700 }}>Aktivitas Setoran Terakhir</h3>
+                <Link to="/deposits" className="font-mono text-primary" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Lihat Semua</Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {recentDeposits.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--color-ink-faint)' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📭</div>
                     <div className="font-mono" style={{ fontSize: '0.8125rem' }}>Belum ada setoran</div>
                   </div>
                 )}
@@ -157,19 +155,19 @@ export default function DashboardPage() {
             {/* Cara Kerja */}
             <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>
-                <h3 style={{ fontSize: '1.0625rem', fontWeight: 700 }}>⚡ Cara Kerja EcoPoints</h3>
+                <h3 style={{ fontSize: '1.0625rem', fontWeight: 700 }}>Cara Kerja EcoPoints</h3>
                 <span className="font-mono text-faint" style={{ fontSize: '0.6875rem', textTransform: 'uppercase' }}>Panduan Nasabah</span>
               </div>
               <ol style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {[
-                  { icon: '🌱', title: 'Pilah Sampah Berdasarkan Jenis', desc: 'Pisahkan antara kemasan plastik, kertas/kardus, dan limbah organik dapur dalam kantong terpisah.' },
-                  { icon: '⚖️', title: 'Bawa & Timbang di Drop Point', desc: 'Petugas akan menimbang menggunakan timbangan berkalibrasi dan mencatat ke sistem.' },
-                  { icon: '✅', title: 'Verifikasi & Kredit Poin Instan', desc: 'Setelah verifikasi petugas, poin otomatis terakumulasi di dashboard Anda.' },
-                  { icon: '🎁', title: 'Tukarkan Poin Kapan Saja', desc: 'Pilih reward yang diinginkan di Katalog Reward dan tukarkan dengan mudah.' }
+                  { step: '[01]', title: 'Pilah Sampah Berdasarkan Jenis', desc: 'Pisahkan antara kemasan plastik, kertas/kardus, dan limbah organik dapur dalam kantong terpisah.' },
+                  { step: '[02]', title: 'Bawa & Timbang di Drop Point', desc: 'Petugas akan menimbang menggunakan timbangan berkalibrasi dan mencatat ke sistem.' },
+                  { step: '[03]', title: 'Verifikasi & Kredit Poin Instan', desc: 'Setelah verifikasi petugas, poin otomatis terakumulasi di dashboard Anda.' },
+                  { step: '[04]', title: 'Tukarkan Poin Kapan Saja', desc: 'Pilih reward yang diinginkan di Katalog Reward dan tukarkan dengan mudah.' }
                 ].map((step, i) => (
                   <li key={i} style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
-                    <div style={{ width: 32, height: 32, border: '1px solid var(--color-primary)', backgroundColor: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
-                      {step.icon}
+                    <div className="font-mono" style={{ width: 32, height: 32, border: '1px solid var(--color-primary)', backgroundColor: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, flexShrink: 0 }}>
+                      {step.step}
                     </div>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.125rem' }}>{step.title}</div>

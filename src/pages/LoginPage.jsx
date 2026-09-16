@@ -155,7 +155,7 @@ export default function LoginPage() {
             disabled={loading}
             style={{ width: '100%', marginTop: '0.5rem' }}
           >
-            {loading ? 'Memverifikasi...' : 'Masuk Sekarang →'}
+            {loading ? 'Memverifikasi...' : 'Masuk Sekarang'}
           </Button>
 
         </form>
@@ -185,7 +185,7 @@ export default function LoginPage() {
 
         <div style={{ textAlign: 'center', marginTop: '1rem' }}>
           <Link to="/" className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
-            ← Kembali ke Beranda
+            Kembali ke Beranda
           </Link>
         </div>
       </div>

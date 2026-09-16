@@ -173,7 +173,7 @@ export default function RegisterPage() {
             }}
           >
             <span className="font-mono text-primary" style={{ fontWeight: 700 }}>
-              ★ BONUS REGISTRASI:
+              BONUS REGISTRASI:
             </span>{' '}
             <span className="text-muted">
               Dapatkan langsung <strong>100 Poin Selamat Datang</strong> yang dapat Anda kumpulkan untuk reward pertama!
@@ -187,7 +187,7 @@ export default function RegisterPage() {
             disabled={loading}
             style={{ width: '100%' }}
           >
-            {loading ? 'Membuat Akun...' : 'Selesaikan Pendaftaran →'}
+            {loading ? 'Membuat Akun...' : 'Selesaikan Pendaftaran'}
           </Button>
         </form>
 
@@ -216,7 +216,7 @@ export default function RegisterPage() {
 
         <div style={{ textAlign: 'center', marginTop: '1rem' }}>
           <Link to="/" className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
-            ← Kembali ke Beranda
+            Kembali ke Beranda
           </Link>
         </div>
       </div>

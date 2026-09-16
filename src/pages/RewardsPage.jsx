@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppNav from '../components/layout/AppNav';
 import Footer from '../components/layout/Footer';
@@ -22,7 +22,7 @@ export default function RewardsPage() {
     setRedeemStatus(res || { success: false, message: 'Penukaran reward gagal. Silakan coba lagi.' });
   };
 
-  const categoryIcons = { Voucher: '🎫', Pulsa: '📱', Sembako: '🛒', 'E-Wallet': '💳', default: '🎁' };
+  // Category icons removed — using category labels instead
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -35,7 +35,7 @@ export default function RewardsPage() {
           <div className="dash-fadein" style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
             <div>
               <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>KATALOG PENUKARAN // EPS-REWARDS</div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>🎁 Tukar Poin dengan Manfaat Nyata</h1>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>Tukar Poin dengan Manfaat Nyata</h1>
             </div>
             <div className="font-mono" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--color-primary)', border: '1px solid var(--color-ink)', padding: '0.625rem 1.25rem' }}>
               <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.65)' }}>SALDO ANDA:</span>
@@ -50,7 +50,6 @@ export default function RewardsPage() {
             {rewards.map((item) => {
               const canAfford = user && user.points >= item.cost;
               const isOutOfStock = item.stock <= 0;
-              const icon = categoryIcons[item.category] || categoryIcons.default;
 
               return (
                 <div
@@ -76,7 +75,6 @@ export default function RewardsPage() {
                   )}
 
                   <div>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>{icon}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem' }}>
                       <span className="badge badge-neutral" style={{ fontSize: '0.625rem' }}>{item.category}</span>
                       <span className="font-mono text-faint" style={{ fontSize: '0.6875rem' }}>Sisa: {item.stock} unit</span>
@@ -99,7 +97,7 @@ export default function RewardsPage() {
                       onClick={() => handleOpenRedeem(item)}
                       style={{ border: '1px solid var(--color-ink)', backgroundColor: canAfford && !isOutOfStock ? 'var(--color-primary)' : 'var(--color-paper)' }}
                     >
-                      {isOutOfStock ? 'Stok Habis' : canAfford ? 'Tukar →' : 'Poin Kurang'}
+                      {isOutOfStock ? 'Stok Habis' : canAfford ? 'Tukar' : 'Poin Kurang'}
                     </Button>
                   </div>
                 </div>
@@ -139,16 +137,16 @@ export default function RewardsPage() {
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <Button variant="secondary" size="md" onClick={() => setSelectedReward(null)} style={{ flex: 1 }}>Batal</Button>
                   <Button variant="primary" size="md" disabled={loadingRedeem} onClick={handleConfirmRedeem} style={{ flex: 1 }}>
-                    {loadingRedeem ? 'Memproses...' : 'Ya, Tukarkan →'}
+                    {loadingRedeem ? 'Memproses...' : 'Ya, Tukarkan'}
                   </Button>
                 </div>
               </>
             ) : (
               <div style={{ textAlign: 'center' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: redeemStatus.success ? 'var(--color-primary-light)' : '#FCECE9', color: redeemStatus.success ? 'var(--color-organik)' : 'var(--color-b3)', border: '1px solid ' + (redeemStatus.success ? 'var(--color-organik)' : 'var(--color-b3)'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem', margin: '0 auto 1rem' }}>
-                  {redeemStatus.success ? '✓' : '✕'}
+                  {redeemStatus.success ? 'OK' : 'X'}
                 </div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>{redeemStatus.success ? 'Penukaran Berhasil! 🎉' : 'Penukaran Gagal'}</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>{redeemStatus.success ? 'Penukaran Berhasil!' : 'Penukaran Gagal'}</h2>
                 <p className="font-mono text-muted" style={{ fontSize: '0.8125rem', marginBottom: '1.5rem' }}>{redeemStatus.message}</p>
                 <Button variant="primary" size="md" onClick={() => { setSelectedReward(null); setRedeemStatus(null); }} style={{ width: '100%' }}>Tutup & Selesai</Button>
               </div>

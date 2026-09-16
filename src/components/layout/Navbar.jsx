@@ -73,7 +73,7 @@ export default function Navbar() {
                   border: '1px solid var(--color-border)'
                 }}
               >
-                <span>★</span>
+                <span>PTS</span>
                 <span>{user.points.toLocaleString('id-ID')} PTS</span>
               </div>
               <Button
@@ -81,7 +81,7 @@ export default function Navbar() {
                 size="sm"
                 onClick={() => navigate('/dashboard')}
               >
-                Dashboard →
+                Dashboard
               </Button>
             </>
           ) : (

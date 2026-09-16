@@ -100,7 +100,7 @@ export default function LandingPage() {
                   className="btn-shimmer"
                   onClick={() => navigate('/register')}
                 >
-                  Daftar Jadi Nasabah →
+                  Daftar Jadi Nasabah
                 </Button>
                 <Button
                   variant="secondary"
@@ -124,21 +124,18 @@ export default function LandingPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem' }}>⚖️</span>
                   <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
-                    Tera Digital Resmi
+                    [01] Tera Digital Resmi
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem' }}>⚡</span>
                   <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
-                    Poin Langsung Masuk
+                    [02] Poin Langsung Masuk
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem' }}>🎁</span>
                   <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
-                    Tukar Sembako & Saldo
+                    [03] Tukar Sembako & Saldo
                   </span>
                 </div>
               </div>
@@ -168,7 +165,7 @@ export default function LandingPage() {
                       letterSpacing: '0.08em'
                     }}
                   >
-                    ● LIVE CONVERT
+                    LIVE CONVERT
                   </span>
                 </div>
 
@@ -337,7 +334,7 @@ export default function LandingPage() {
                         size="sm"
                         onClick={() => navigate('/deposits/create')}
                       >
-                        Setor Sekarang →
+                        Setor Sekarang
                       </Button>
                     </div>
                   </div>
@@ -363,15 +360,15 @@ export default function LandingPage() {
         <div className="marquee-track font-mono" style={{ fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {[1, 2].map((loop) => (
             <span key={loop} style={{ display: 'inline-flex', alignItems: 'center', gap: '2rem', paddingRight: '2rem' }}>
-              <span><strong style={{ color: '#98C379' }}>● PLASTIK PET & HDPE</strong> +300 PTS/KG</span>
+              <span><strong style={{ color: '#98C379' }}>PLASTIK PET & HDPE</strong> +300 PTS/KG</span>
               <span style={{ opacity: 0.4 }}>•</span>
-              <span><strong style={{ color: '#E5C07B' }}>● KERTAS & KARDUS</strong> +150 PTS/KG</span>
+              <span><strong style={{ color: '#E5C07B' }}>KERTAS & KARDUS</strong> +150 PTS/KG</span>
               <span style={{ opacity: 0.4 }}>•</span>
-              <span><strong style={{ color: '#61AFEF' }}>● ORGANIK KOMPOS</strong> +50 PTS/KG</span>
+              <span><strong style={{ color: '#61AFEF' }}>ORGANIK KOMPOS</strong> +50 PTS/KG</span>
               <span style={{ opacity: 0.4 }}>•</span>
-              <span><strong style={{ color: 'var(--color-poin)' }}>⚡ TERA DIGITAL REAL-TIME</strong></span>
+              <span><strong style={{ color: 'var(--color-poin)' }}>TERA DIGITAL REAL-TIME</strong></span>
               <span style={{ opacity: 0.4 }}>•</span>
-              <span><strong style={{ color: '#98C379' }}>🎁 TUKAR SEMBAKO & SALDO DIGITAL</strong></span>
+              <span><strong style={{ color: '#98C379' }}>TUKAR SEMBAKO & SALDO DIGITAL</strong></span>
               <span style={{ opacity: 0.4 }}>•</span>
               <span style={{ color: 'var(--color-paper)' }}>BEBAS MINIMUM PENYETORAN</span>
               <span style={{ opacity: 0.4 }}>•</span>
@@ -422,25 +419,21 @@ export default function LandingPage() {
             {[
               {
                 step: '[STEP 01]',
-                icon: '🌱',
                 title: 'Pilah di Sumber',
                 desc: 'Kelompokkan sampah rumah tangga ke dalam wadah organik, anorganik kering, dan limbah B3.'
               },
               {
                 step: '[STEP 02]',
-                icon: '📍',
                 title: 'Bawa ke Drop Point',
                 desc: 'Kunjungi unit bank sampah terdekat di balai RW atau loket stasiun mitra terdaftar.'
               },
               {
                 step: '[STEP 03]',
-                icon: '⚖️',
                 title: 'Penimbangan Riil',
                 desc: 'Petugas melakukan tera kalibrasi timbangan digital dan mencatat berat bersih sampah.'
               },
               {
                 step: '[STEP 04]',
-                icon: '🎁',
                 title: 'Tukar Reward',
                 highlight: true,
                 desc: 'Poin langsung masuk ke akun Anda dan dapat ditukarkan voucher sembako, pulsa, maupun saldo e-wallet.'
@@ -479,7 +472,6 @@ export default function LandingPage() {
                     >
                       {item.step}
                     </div>
-                    <span style={{ fontSize: '1.125rem' }}>{item.icon}</span>
                   </div>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>
                     {item.title}
@@ -676,7 +668,7 @@ export default function LandingPage() {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             <Button variant="primary" size="lg" onClick={() => navigate('/register')}>
-              Daftar Gratis Sekarang →
+              Daftar Gratis Sekarang
             </Button>
           </div>
         </div>

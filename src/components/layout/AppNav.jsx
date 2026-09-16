@@ -126,7 +126,7 @@ export default function AppNav() {
               fontSize: '0.875rem'
             }}
           >
-            <span style={{ color: 'var(--color-poin)', fontWeight: 800 }}>★</span>
+            <span style={{ color: 'var(--color-poin)', fontWeight: 800 }}>PTS</span>
             <span style={{ fontWeight: 700, color: 'var(--color-ink)' }}>
               {user ? (user.points || 0).toLocaleString('id-ID') : 0}
             </span>

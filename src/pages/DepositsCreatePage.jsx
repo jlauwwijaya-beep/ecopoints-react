@@ -155,7 +155,7 @@ export default function DepositsCreatePage() {
                     fontWeight: 700
                   }}
                 >
-                  ✓
+                  OK
                 </div>
                 <h2 style={{ fontSize: '1.375rem', fontWeight: 800 }}>Setoran Berhasil Diajukan</h2>
                 <p className="font-mono text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
@@ -215,7 +215,7 @@ export default function DepositsCreatePage() {
                   onClick={() => navigate('/deposits')}
                   style={{ flex: 1 }}
                 >
-                  Ke Riwayat Setoran →
+                  Ke Riwayat Setoran
                 </Button>
               </div>
             </div>
@@ -296,7 +296,7 @@ export default function DepositsCreatePage() {
                   <div className="form-group">
                     <label className="form-label" htmlFor="wasteType">
                       2. Jenis Spesifik Sampah
-                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>● Dari Database</span>}
+                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>Dari Database</span>}
                     </label>
                     <select
                       id="wasteType"
@@ -373,7 +373,7 @@ export default function DepositsCreatePage() {
                   <div className="form-group">
                     <label className="form-label" htmlFor="location">
                       4. Lokasi Drop Point Tujuan
-                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>● Dari Database</span>}
+                      {apiConnected && <span style={{ fontSize: '0.6875rem', color: '#16a34a', marginLeft: 6 }}>Dari Database</span>}
                     </label>
                     <select
                       id="location"
@@ -422,7 +422,7 @@ export default function DepositsCreatePage() {
                     disabled={isSubmitting}
                     style={{ width: '100%', marginTop: '0.5rem', opacity: isSubmitting ? 0.7 : 1 }}
                   >
-                    {isSubmitting ? 'Mengirim...' : 'Konfirmasi & Kirim Setoran →'}
+                    {isSubmitting ? 'Mengirim...' : 'Konfirmasi & Kirim Setoran'}
                   </Button>
                 </form>
               </div>

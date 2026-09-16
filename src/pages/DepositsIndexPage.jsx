@@ -218,7 +218,7 @@ export default function DepositsIndexPage() {
                     className="font-mono"
                     style={{ fontSize: '1rem', fontWeight: 700 }}
                   >
-                    ✕
+                    X
                   </button>
                 </div>
 
