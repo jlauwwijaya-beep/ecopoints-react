@@ -81,15 +81,12 @@ export default function PointsPage() {
           >
             <div>
               <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                BUKU BESAR MUTASI // EPS-LEDGER
+                BUKU BESAR MUTASI
               </div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>
                 Riwayat & Mutasi Poin
               </h1>
             </div>
-            <span className="font-mono text-faint" style={{ fontSize: '0.75rem' }}>
-              Sinkronisasi Realtime
-            </span>
           </div>
 
           {/* Metric Summary Cards (3 cards) */}

@@ -115,7 +115,7 @@ export default function DepositsCreatePage() {
           >
             <div>
               <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                FORMULIR PENYETORAN // EPS-F01
+                FORMULIR PENYETORAN
               </div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>
                 Input Setoran Sampah Baru
@@ -442,9 +442,6 @@ export default function DepositsCreatePage() {
                       <CategoryDot type={category} pulse={true} size={8} />
                       <span>SCALE CALIBRATION HUD</span>
                     </div>
-                    <span className="font-mono text-faint" style={{ fontSize: '0.6875rem' }}>
-                      {draftId}
-                    </span>
                   </div>
 
                   <div className="scale-hud-body">

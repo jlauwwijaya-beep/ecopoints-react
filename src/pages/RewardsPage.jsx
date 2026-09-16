@@ -34,7 +34,7 @@ export default function RewardsPage() {
           {/* Header */}
           <div className="dash-fadein" style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
             <div>
-              <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>KATALOG PENUKARAN // EPS-REWARDS</div>
+              <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>KATALOG PENUKARAN</div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>Tukar Poin dengan Manfaat Nyata</h1>
             </div>
             <div className="font-mono" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--color-primary)', border: '1px solid var(--color-ink)', padding: '0.625rem 1.25rem' }}>
