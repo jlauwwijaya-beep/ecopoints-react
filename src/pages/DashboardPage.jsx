@@ -43,7 +43,7 @@ export default function DashboardPage() {
           >
             <div>
               <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                ID NASABAH // {user?.memberId || 'EP-ID-8821'}
+                NASABAH
               </div>
               <h1 style={{ fontSize: '1.875rem', fontWeight: 800, marginTop: '0.25rem' }}>
                 Selamat datang, {user?.name || 'Budi Pratama'}
