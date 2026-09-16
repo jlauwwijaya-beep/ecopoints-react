@@ -154,7 +154,6 @@ export default function LandingPage() {
                 <div className="scale-hud-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <CategoryDot type="organik" pulse={true} size={8} />
-                    <span>SCALE SIMULATOR // EPS-01</span>
                   </div>
                   <span
                     className="font-mono"
