@@ -10,6 +10,7 @@ const adminNavItems = [
   ['Pantau Penukaran', '/admin/redemptions'],
   ['Laporan', '/admin/reports'],
   ['Manajemen Akun', '/admin/users'],
+  ['Kirim Notifikasi', '/admin/notifications'],
 ];
 
 export default function AdminNav() {

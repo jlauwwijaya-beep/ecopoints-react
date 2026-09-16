@@ -225,7 +225,14 @@ export const adminApi = {
   getUsers: () => request('/admin/users'),
   createUser: (payload) => request('/admin/users', { method: 'POST', body: JSON.stringify(payload) }),
   updateUser: (id, payload) => request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
-  deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' })
+  deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
+
+  // Push Notification
+  sendNotification: (payload) =>
+    request('/admin/notifications/send', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
 };
 
 export default {

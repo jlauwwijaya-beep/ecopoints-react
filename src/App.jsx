@@ -14,6 +14,7 @@ import RewardsPage from './pages/RewardsPage';
 import AdminDepositsPage from './pages/admin/AdminDepositsPage';
 import AdminManagementPage from './pages/admin/AdminManagementPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminRoute from './components/auth/AdminRoute';
 import PetugasRoute from './components/auth/PetugasRoute';
@@ -125,6 +126,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminUsersPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/notifications"
+            element={
+              <AdminRoute>
+                <AdminNotificationsPage />
               </AdminRoute>
             }
           />
