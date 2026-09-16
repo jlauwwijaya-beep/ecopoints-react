@@ -146,17 +146,17 @@ export default function AdminDepositsPage() {
                   <tr key={d.id}>
                     <td className="font-mono" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>#{d.id}</td>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{d.user?.name || '-'}</div>
+                      <div style={{ fontWeight: 600 }}>{d.user_name || d.user?.name || '-'}</div>
                       <div className="text-faint" style={{ fontSize: '0.75rem' }}>{d.user?.email || ''}</div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span className="category-dot category-dot-anorganik"></span>
-                        {d.waste_type?.name || 'Sampah'}
+                        {d.waste_type_name || d.waste_type?.name || 'Sampah'}
                       </div>
                     </td>
                     <td className="font-mono tabular-nums" style={{ fontWeight: 700 }}>{d.weight_kg?.toFixed(1) || '0.0'}</td>
-                    <td style={{ fontSize: '0.8125rem' }}>{d.drop_point?.name || '-'}</td>
+                    <td style={{ fontSize: '0.8125rem' }}>{d.drop_point_name || d.drop_point?.name || '-'}</td>
                     <td style={{ fontSize: '0.8125rem' }}>{formatDate(d.created_at)}</td>
                     <td>{statusBadge(d.status)}</td>
                     <td>

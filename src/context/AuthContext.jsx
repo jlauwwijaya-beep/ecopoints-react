@@ -202,7 +202,7 @@ export function AuthProvider({ children }) {
         name: r.name,
         cost: r.point_cost,
         stock: r.stock,
-        category: 'Voucher',
+        category: r.category || 'Voucher',
         description: r.description || 'Reward penukaran EcoPoints resmi.',
         image: resolveApiAssetUrl(r.image)
       }));
