@@ -102,13 +102,16 @@ function formatApiDeposit(d) {
     ? d.total_weight_kg
     : (d.weight_kg !== undefined && d.weight_kg !== null ? d.weight_kg : 0);
 
-  const points = d.earned_points !== undefined && d.earned_points !== null
-    ? d.earned_points
-    : (d.points_earned !== undefined && d.points_earned !== null
-        ? d.points_earned
-        : (d.estimated_points !== undefined && d.estimated_points !== null
-            ? d.estimated_points
-            : Math.round(weight * (d.waste_type?.points_per_kg || 500))));
+  const isRejectedOrCancelled = d.status === 'rejected' || d.status === 'cancelled' || d.status === 'canceled';
+  const points = isRejectedOrCancelled
+    ? 0
+    : (d.earned_points !== undefined && d.earned_points !== null
+        ? d.earned_points
+        : (d.points_earned !== undefined && d.points_earned !== null
+            ? d.points_earned
+            : (d.estimated_points !== undefined && d.estimated_points !== null
+                ? d.estimated_points
+                : Math.round(weight * (d.waste_type?.points_per_kg || 500)))));
 
   return {
     id: `DEP-${String(d.id).padStart(4, '0')}`,

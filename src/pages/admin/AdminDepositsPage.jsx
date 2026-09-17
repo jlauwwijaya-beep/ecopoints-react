@@ -122,14 +122,26 @@ export default function AdminDepositsPage() {
     if (modal.action === 'verify') {
       if (modalItems.length > 0) {
         for (const it of modalItems) {
-          if (!it.actualWeight || Number(it.actualWeight) <= 0) {
-            setError(`Masukkan berat aktual yang valid untuk item ${it.waste_type_name}.`);
+          const w = Number(it.actualWeight);
+          if (!it.actualWeight || isNaN(w) || w <= 0) {
+            setError(`Masukkan berat aktual yang valid (> 0 kg) untuk item ${it.waste_type_name}.`);
+            return;
+          }
+          if (w > 100) {
+            setError(`Berat aktual untuk item ${it.waste_type_name} maksimal 100 kg.`);
             return;
           }
         }
-      } else if (!actualWeight || Number(actualWeight) <= 0) {
-        setError('Masukkan berat aktual hasil timbangan sebelum verifikasi.');
-        return;
+      } else {
+        const w = Number(actualWeight);
+        if (!actualWeight || isNaN(w) || w <= 0) {
+          setError('Masukkan berat aktual hasil timbangan (> 0 kg) sebelum verifikasi.');
+          return;
+        }
+        if (w > 100) {
+          setError('Berat aktual maksimal 100 kg.');
+          return;
+        }
       }
     }
 
@@ -584,8 +596,10 @@ export default function AdminDepositsPage() {
                                   className="form-input font-mono"
                                   type="number"
                                   min="0.01"
+                                  max="100"
                                   step="0.01"
                                   value={item.actualWeight}
+                                  onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                                   onChange={e => handleModalItemWeightChange(idx, e.target.value)}
                                   placeholder="Berat aktual (kg)"
                                   style={{ fontWeight: 700 }}
@@ -607,8 +621,10 @@ export default function AdminDepositsPage() {
                           className="form-input font-mono"
                           type="number"
                           min="0.01"
+                          max="100"
                           step="0.01"
                           value={actualWeight}
+                          onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                           onChange={e => setActualWeight(e.target.value)}
                           style={{ fontWeight: 700 }}
                           required

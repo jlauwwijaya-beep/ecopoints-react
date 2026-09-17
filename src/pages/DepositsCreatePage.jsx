@@ -137,13 +137,29 @@ export default function DepositsCreatePage() {
   };
 
   const handleItemWeightChange = (tempId, val) => {
-    const weightVal = Math.max(0.1, parseFloat(val) || 0.1);
+    let weightVal = parseFloat(val);
+    if (isNaN(weightVal)) weightVal = 0;
+    if (weightVal < 0) weightVal = 0.1;
+    if (weightVal > 100) weightVal = 100;
     setItems(prev => prev.map(it => it.tempId === tempId ? { ...it, weight: weightVal } : it));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (items.length === 0) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (!it.weight || it.weight <= 0) {
+        alert(`Berat sampah pada Item #${i + 1} harus lebih dari 0 kg!`);
+        return;
+      }
+      if (it.weight > 100) {
+        alert(`Berat sampah pada Item #${i + 1} maksimal 100 kg!`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     const dropPointId = selectedDropPoint?.id || (dropPoints[0]?.id || null);
@@ -462,6 +478,7 @@ export default function DepositsCreatePage() {
                                 max="100"
                                 className="form-input font-mono"
                                 value={item.weight}
+                                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                                 onChange={(e) => handleItemWeightChange(item.tempId, e.target.value)}
                                 style={{ fontWeight: 700, width: '120px' }}
                               />
