@@ -174,18 +174,34 @@ export default function AdminManagementPage({ section = "overview" }) {
         adminApi.getUsers().catch(() => null),
       ]);
 
-      if (rewardsRes?.success && Array.isArray(rewardsRes.data)) {
+      const rawRewards = Array.isArray(rewardsRes?.data)
+        ? rewardsRes.data
+        : Array.isArray(rewardsRes?.data?.data)
+        ? rewardsRes.data.data
+        : [];
+      if (rawRewards.length > 0) {
         const rMap = {};
-        rewardsRes.data.forEach((r) => {
-          rMap[r.id] = r;
+        rawRewards.forEach((r) => {
+          if (r && r.id != null) {
+            rMap[r.id] = r;
+            rMap[String(r.id)] = r;
+          }
         });
         setRewardsMap(rMap);
       }
 
-      if (usersRes?.success && Array.isArray(usersRes.data)) {
+      const rawUsers = Array.isArray(usersRes?.data)
+        ? usersRes.data
+        : Array.isArray(usersRes?.data?.data)
+        ? usersRes.data.data
+        : [];
+      if (rawUsers.length > 0) {
         const uMap = {};
-        usersRes.data.forEach((u) => {
-          uMap[u.id] = u;
+        rawUsers.forEach((u) => {
+          if (u && u.id != null) {
+            uMap[u.id] = u;
+            uMap[String(u.id)] = u;
+          }
         });
         setUsersMap(uMap);
       }
@@ -338,39 +354,45 @@ export default function AdminManagementPage({ section = "overview" }) {
   };
 
   const getCustomerName = (item) => {
-    return (
+    const raw =
+      item.user?.name ||
       item.user_name ||
       item.userName ||
       usersMap[item.user_id]?.name ||
-      item.user?.name ||
-      (item.user_id ? `Nasabah #${item.user_id}` : "-")
-    );
+      usersMap[String(item.user_id)]?.name ||
+      "";
+    if (raw && !raw.startsWith("User #")) return raw;
+    return item.user_id ? `Nasabah #${item.user_id}` : "-";
   };
 
   const getCustomerEmail = (item) => {
     return (
+      item.user?.email ||
       item.user_email ||
       item.userEmail ||
       usersMap[item.user_id]?.email ||
-      item.user?.email ||
+      usersMap[String(item.user_id)]?.email ||
       ""
     );
   };
 
   const getRewardName = (item) => {
-    return (
+    const raw =
+      item.reward?.name ||
       item.reward_name ||
       item.rewardName ||
       rewardsMap[item.reward_id]?.name ||
-      item.reward?.name ||
-      (item.reward_id ? `Hadiah #${item.reward_id}` : "-")
-    );
+      rewardsMap[String(item.reward_id)]?.name ||
+      "";
+    if (raw && !raw.startsWith("Reward #")) return raw;
+    return item.reward_id ? `Hadiah #${item.reward_id}` : "-";
   };
 
   const getRewardCategory = (item) => {
     return (
       item.reward?.category ||
       rewardsMap[item.reward_id]?.category ||
+      rewardsMap[String(item.reward_id)]?.category ||
       "Hadiah"
     );
   };
@@ -978,22 +1000,42 @@ export default function AdminManagementPage({ section = "overview" }) {
                                 gap: "0.65rem",
                               }}
                             >
-                              <div
-                                style={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: "6px",
-                                  background: "var(--color-poin-light)",
-                                  border: "1px solid #E3CE74",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: "1rem",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                🎁
-                              </div>
+                              {item.reward?.image || rewardsMap[item.reward_id]?.image ? (
+                                <img
+                                  src={resolveApiAssetUrl(
+                                    item.reward?.image || rewardsMap[item.reward_id]?.image
+                                  )}
+                                  alt={rewName}
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: "6px",
+                                    objectFit: "cover",
+                                    border: "1px solid var(--color-border)",
+                                    flexShrink: 0,
+                                  }}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: "6px",
+                                    background: "var(--color-poin-light)",
+                                    border: "1px solid #E3CE74",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: "1rem",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  🎁
+                                </div>
+                              )}
                               <div>
                                 <div
                                   style={{

@@ -6,15 +6,15 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://139.190.96.203:8092',
+        target: 'http://127.0.0.1:8092',
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://139.190.96.203:8092',
+        target: 'http://127.0.0.1:8092',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://139.190.96.203:8092',
+        target: 'http://127.0.0.1:8092',
         changeOrigin: true,
       },
     },
