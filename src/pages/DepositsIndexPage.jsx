@@ -7,7 +7,6 @@ import Button from '../components/ui/Button';
 import DataTable from '../components/ui/DataTable';
 import StatusBadge from '../components/ui/StatusBadge';
 import CategoryDot from '../components/ui/CategoryDot';
-import { QRCodeSVG } from 'qrcode.react';
 
 export default function DepositsIndexPage() {
   const { deposits, clearDepositHistory } = useAuth();
@@ -280,22 +279,6 @@ export default function DepositsIndexPage() {
                     </span>
                   </div>
                 </div>
-
-                {selectedDeposit.status === 'pending' && selectedDeposit.rawId && (
-                  <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-                    <div style={{ display: 'inline-block', padding: '0.625rem', background: '#fff', border: '1px solid var(--color-border)' }}>
-                      <QRCodeSVG
-                        value={String(selectedDeposit.rawId)}
-                        size={160}
-                        level="M"
-                        includeMargin
-                      />
-                    </div>
-                    <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', marginTop: '0.5rem' }}>
-                      QR SETORAN UNTUK PETUGAS
-                    </div>
-                  </div>
-                )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button variant="secondary" size="sm" onClick={() => setSelectedDeposit(null)}>

@@ -6,7 +6,6 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/ui/Button';
 import CategoryDot from '../components/ui/CategoryDot';
 import ReceiptRow from '../components/ui/ReceiptRow';
-import { QRCodeSVG } from 'qrcode.react';
 
 export default function DepositsCreatePage() {
   const navigate = useNavigate();
@@ -97,7 +96,6 @@ export default function DepositsCreatePage() {
   }, [items]);
 
   const currentLocation = selectedDropPoint?.name || dropPoints[0]?.name || 'Drop Point EcoPoints Pusat';
-  const qrValue = submittedDeposit?.rawId ? String(submittedDeposit.rawId) : '';
 
   // Item handlers
   const handleAddItem = () => {
@@ -284,17 +282,6 @@ export default function DepositsCreatePage() {
                   highlight={true}
                 />
               </div>
-
-              {qrValue && (
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'inline-block', padding: '0.75rem', background: '#fff', border: '1px solid var(--color-border)' }}>
-                    <QRCodeSVG value={qrValue} size={180} level="M" includeMargin />
-                  </div>
-                  <div className="font-mono text-faint" style={{ fontSize: '0.6875rem', marginTop: '0.5rem' }}>
-                    TUNJUKKAN QR INI KEPADA PETUGAS DROP POINT
-                  </div>
-                </div>
-              )}
 
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <Button
