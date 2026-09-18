@@ -191,7 +191,12 @@ export default function AdminDashboardPage() {
       setReport(rpt);
       setMonthlyData(buildMonthlyTrend(deposits, txs));
       setPieData(buildWasteComposition(rpt.by_waste_type));
-      setLeaderboard(Array.isArray(lbRes.data) ? lbRes.data.slice(0, 5) : []);
+      const rawLb = Array.isArray(lbRes.data) ? lbRes.data : [];
+      const sortedLb = [...rawLb]
+        .sort((a, b) => Number(b.total_kg || 0) - Number(a.total_kg || 0))
+        .slice(0, 5)
+        .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+      setLeaderboard(sortedLb);
     } catch (e) {
       setError('Gagal memuat data dashboard.');
     } finally {
@@ -345,8 +350,8 @@ export default function AdminDashboardPage() {
 
               {/* ── LEADERBOARD TABLE ──────────────────────────────────── */}
               <div style={{ background: '#fff', border: `1px solid ${COLORS.border}`, padding: '1.5rem', marginBottom: '2rem' }}>
-                <SectionHeading sub="Top 5 nasabah berdasarkan saldo poin aktif">
-                  Top Nasabah Aktif
+                <SectionHeading sub="Top 5 nasabah berdasarkan total berat (kg) sampah yang telah disetorkan">
+                  Top Nasabah (Setoran Sampah Terbanyak)
                 </SectionHeading>
                 {leaderboard.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '2rem', color: COLORS.muted, fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
@@ -359,8 +364,8 @@ export default function AdminDashboardPage() {
                         <tr>
                           <th>#</th>
                           <th>Nasabah</th>
-                          <th>Saldo Poin</th>
                           <th>Total Setor (kg)</th>
+                          <th>Saldo Poin</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -384,10 +389,10 @@ export default function AdminDashboardPage() {
                                 </div>
                               </td>
                               <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: COLORS.primary }}>
-                                {fmtNum(entry.points_balance)}
+                                {Number(entry.total_kg || 0).toFixed(1)} kg
                               </td>
                               <td style={{ fontFamily: 'var(--font-mono)' }}>
-                                {Number(entry.total_kg || 0).toFixed(1)} kg
+                                {fmtNum(entry.points_balance)}
                               </td>
                             </tr>
                           );
